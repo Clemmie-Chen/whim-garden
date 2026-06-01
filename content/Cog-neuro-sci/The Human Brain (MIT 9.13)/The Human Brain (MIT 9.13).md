@@ -1,11 +1,15 @@
 ---
 publish: true
 created: 2026-06-01T10:56:10.362+08:00
-modified: 2026-06-01T11:37:49.493+08:00
+modified: 2026-06-01T11:43:54.722+08:00
 ---
 
+- [Lecture](https://ocw.mit.edu/courses/9-13-the-human-brain-spring-2019/)
 - [Lecture Notes](https://ocw.mit.edu/courses/9-13-the-human-brain-spring-2019/pages/lecture-notes/)
+- [Lecture Transcript](https://ocw.mit.edu/courses/9-13-the-human-brain-spring-2019/2e0ce075c0db01906a42a477ea5c85a9_bAkuNXtgrLA.pdf)
 - Lecture Year: 2019
+
+> I cannot believe we used to take notes by hand. I'm glad that Claude saves me from note-taking and make both possible of "focusing on understanding the course" and "note down what just learnt".
 
 # 1- Intro to Human Brain
 
@@ -15,7 +19,7 @@ Reading: Kanwisher, N. (2010). "Functional specificity in the human brain: A win
 
 # 2- Neuroanatomy
 
-Claude takes the note: [[Lecture2_Neuroanatomy]]
+Claude's note: [[Lecture2_Neuroanatomy]]
 
 Some neuroanatomy companions:
 

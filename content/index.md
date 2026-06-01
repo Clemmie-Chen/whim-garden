@@ -2,7 +2,7 @@
 publish: true
 title: Welcome 🌱 !
 created: 2026-06-01T07:37:35.935+08:00
-modified: 2026-06-01T11:39:06.977+08:00
+modified: 2026-06-01T11:49:56.557+08:00
 ---
 
 I'm Clemmie Chen. I read, think, take notes, write, and share my braindumps here.
@@ -20,3 +20,4 @@ The fields below are my rabbit holes and what I might dump into this Whim Garden
 
 - **Recent**: AI Agent PM at a startup. Before this, I worked for Pine AI, Syft AI, and Toki AI, all startups too.
 - **Before**: A master's in Linguistic Data Science; and a bachelor's in Hindi. (Also, please watch _Mahabharata_, the TV series. All 267 episodes are worth your time.)
+- My mother tongue is Chinese, so the language will be a mixture.

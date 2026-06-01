@@ -2,7 +2,7 @@
 publish: true
 title: Welcome 🌱 !
 created: 2026-06-01T07:37:35.935+08:00
-modified: 2026-06-01T12:03:03.450+08:00
+modified: 2026-06-01T12:04:17.819+08:00
 ---
 
 I'm Clemmie Chen. I read, think, take notes, write, and share my braindumps here.
@@ -13,7 +13,7 @@ This Whim Garden is built via obsidian, quartz and quartz syncer. Thank you!
 
 The fields below are my rabbit holes and what I might dump into this Whim Garden:
 
-- **Cognitive neuroscience:** creativity, decision-making, attention, memory, and ADHD.
+- **Cognitive neuroscience:** the basic, creativity, decision-making, attention, memory, and ADHD.
 - **LLM:**  interpretability, alignment, and multi-agent orchestration.
 - **Philosophy:** ethics, and an unreasonable resonance with Kant.
 - **Linguistics:** phonetics and phonology. I once built a phonetic system for Shanghainese lyrics.

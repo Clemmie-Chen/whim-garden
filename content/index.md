@@ -1,14 +1,13 @@
 ---
 publish: true
-title: Welcome!
+title: Welcome 🌱 !
 created: 2026-06-01T07:37:35.935+08:00
-modified: 2026-06-01T11:08:09.550+08:00
+modified: 2026-06-01T11:39:06.977+08:00
 ---
 
-Welcome 🌱!
-I'm Clemmie Chen. I read, think, take notes, write, and share my braindump here.
+I'm Clemmie Chen. I read, think, take notes, write, and share my braindumps here.
 
-## My Rabbit Holes
+## 🕳️ My Rabbit Holes
 
 The fields below are my rabbit holes and what I might dump into this Whim Garden:
 
@@ -17,7 +16,7 @@ The fields below are my rabbit holes and what I might dump into this Whim Garden
 - **Philosophy:** ethics, and an unreasonable resonance with Kant.
 - **Linguistics:** phonetics and phonology. I once built a phonetic system for Shanghainese lyrics.
 
-## Who am I?
+## 👩 Who am I?
 
 - **Recent**: AI Agent PM at a startup. Before this, I worked for Pine AI, Syft AI, and Toki AI, all startups too.
 - **Before**: A master's in Linguistic Data Science; and a bachelor's in Hindi. (Also, please watch _Mahabharata_, the TV series. All 267 episodes are worth your time.)

@@ -2,7 +2,7 @@
 publish: true
 title: Lecture 2 笔记：Neuroanatomy 神经解剖
 created: 2026-06-03T13:04:25.072+08:00
-modified: 2026-06-03T13:04:25.077+08:00
+modified: 2026-06-03T17:18:07.629+08:00
 tags:
   - cog-neuro-sci
 ---

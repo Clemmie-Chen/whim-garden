@@ -2,7 +2,7 @@
 publish: true
 title: The Human Brain (MIT 9.13)
 created: 2026-06-01T10:56:10.362+08:00
-modified: 2026-06-02T15:57:21.006+08:00
+modified: 2026-06-03T17:42:14.672+08:00
 tags:
   - cog-neuro-sci
 ---

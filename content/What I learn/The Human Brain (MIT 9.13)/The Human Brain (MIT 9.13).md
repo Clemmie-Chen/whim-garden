@@ -1,7 +1,8 @@
 ---
 publish: true
+title: The Human Brain (MIT 9.13)
 created: 2026-06-01T10:56:10.362+08:00
-modified: 2026-06-01T14:25:23.696+08:00
+modified: 2026-06-02T15:57:21.006+08:00
 tags:
   - cog-neuro-sci
 ---
@@ -21,7 +22,7 @@ Reading: Kanwisher, N. (2010). "Functional specificity in the human brain: A win
 
 # 2- Neuroanatomy
 
-Claude's note: [[Lecture2_Neuroanatomy]]
+Claude's note: [[Week2_Neuroanatomy]]
 
 Some neuroanatomy companions:
 

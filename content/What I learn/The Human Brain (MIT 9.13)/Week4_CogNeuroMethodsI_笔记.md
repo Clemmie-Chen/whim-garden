@@ -2,10 +2,12 @@
 publish: true
 title: Lecture 4 笔记：Cognitive Neuroscience Methods I 认知神经科学方法（一）
 created: 2026-06-03T14:16:00.436+08:00
-modified: 2026-06-03T15:27:12.865+08:00
+modified: 2026-06-03T20:27:25.426+08:00
 tags:
   - cog-neuro-sci
 ---
+
+Claude 总结的：[Week 4-5 methodology 总览 html](https://claude.ai/public/artifacts/3465a3e7-dd52-4332-8848-ef89babf67de)
 
 官方资源（Spring 2019）：
 

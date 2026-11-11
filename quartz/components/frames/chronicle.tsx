@@ -250,8 +250,12 @@ export const sharedCss = `
 .chron .seclinks a { display: inline-flex; align-items: center; gap: 6px; color: var(--darkgray); background: none; padding: 0; font-weight: inherit; transition: color 150ms ease-out; }
 .chron .seclinks a:hover { color: var(--secondary); }
 .chron .seclinks b { font-weight: 400; color: var(--gray); }
+/* long underscore titles (Week_1_Reading_…) have no break points */
+.chron :is(h1, h3, .pn strong) { overflow-wrap: anywhere; }
 @media (max-width: 800px) {
   #quartz-body { padding: 0 1rem; }
+  /* the theme sizes the footer to 100dvw - 3rem plus its own padding, which ignores the padding above */
+  html .page > #quartz-body footer { min-width: 0; max-width: none; padding: 0; }
   .home-nav { flex-wrap: wrap; }
   .chron .day { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .chron .date { position: relative; padding-bottom: 0; }

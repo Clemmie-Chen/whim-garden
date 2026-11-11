@@ -1,5 +1,6 @@
 ---
 publish: true
+description: "本课为人脸知觉方法综述的下半场（Part 2 of 2），续 Lecture 4。"
 title: Lecture 5 笔记：Cognitive Neuroscience Methods II 认知神经科学方法（二）
 created: 2026-06-03T15:56:16.277+08:00
 modified: 2026-06-03T17:18:07.635+08:00

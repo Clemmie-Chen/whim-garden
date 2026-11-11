@@ -1,5 +1,6 @@
 ---
 publish: true
+description: "All the lecture notes and reading notes are written by Claude, and instructed by me."
 title: The Human Brain (MIT 9.13)
 created: 2026-06-01T10:56:10.362+08:00
 modified: 2026-06-03T17:42:14.672+08:00

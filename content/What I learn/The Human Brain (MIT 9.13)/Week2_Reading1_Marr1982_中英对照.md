@@ -1,5 +1,6 @@
 ---
 publish: true
+description: "To understand any information-processing system (vision, the brain, even a computer), looking only at the hardware / neurons is nowhere near enough."
 title: Reading Note (中英对照)：Marr (1982) Vision — General Introduction & Ch.1
 created: 2026-06-02T14:47:36.128+08:00
 modified: 2026-06-02T14:58:32.271+08:00

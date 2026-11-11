@@ -289,11 +289,13 @@ layout:
     content:
       template: home
     folder:
+      template: listing
       exclude:
         - reader-mode
       positions:
         right: []
     tag:
+      template: listing
       exclude:
         - reader-mode
       positions:

@@ -1,9 +1,7 @@
 import { PageFrame, PageFrameProps } from "./types"
-import { DefaultFrame } from "./DefaultFrame"
-import { QuartzPluginData } from "../../plugins/vfile"
-import { FullSlug, resolveRelative } from "../../util/path"
-import { byDateAndAlphabetical } from "../PageList"
+import { FullSlug, resolveRelative, simplifySlug } from "../../util/path"
 import { getDate } from "../Date"
+import { chronicle, Days, MONTHS, minutes, Nav, sharedCss, tagsOf } from "./chronicle"
 
 // Homepage copy. Everything else on the page comes from the notes themselves.
 const INTRO = "I read, think, take notes, and share my braindumps here."
@@ -13,81 +11,10 @@ const ABOUT = [
   "A master's in Linguistic Data Science and a bachelor's in Hindi. My mother tongue is Chinese, so the language here is a mixture.",
 ]
 
-// Top-level folders (by slug), in display order. A folder not listed here still shows up, after these.
-const SECTIONS: Record<string, { name: string; short: string; desc: string }> = {
-  "how-i-do": { name: "How I do", short: "Do", desc: "动手做的东西：工具、教程、这座花园本身" },
-  "what-i-learn": { name: "What I learn", short: "Learn", desc: "在上的课和配套阅读" },
-  "what-i-read": { name: "What I read", short: "Read", desc: "读书笔记" },
-  "what-i-write": { name: "What I write", short: "Write", desc: "自己写的长文" },
-  "what-i‘m-thinking-about": {
-    name: "What I‘m thinking about",
-    short: "Thinking",
-    desc: "正在想、还没想完的问题",
-  },
-  braindump: { name: "Braindump", short: "Braindump", desc: "随手倒出来的念头" },
-}
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-
-const unslug = (s: string) => s.replace(/-/g, " ")
-const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
-// CJK characters count one each, everything else by whitespace-separated words
-const minutes = (text = "") => {
-  const cjk = (text.match(/[㐀-鿿]/g) ?? []).length
-  const words = (text.replace(/[㐀-鿿]/g, " ").match(/\S+/g) ?? []).length
-  return Math.max(1, Math.round((cjk + words) / 400))
-}
-
-function Chronicle({ componentData, left, footer: Footer }: PageFrameProps) {
+function Home({ componentData, left, footer: Footer }: PageFrameProps) {
   const here = componentData.fileData.slug!
-  const notes = componentData.allFiles
-    .filter((f) => f.slug && f.slug !== "index" && f.dates)
-    .filter((f) => !f.frontmatter?.unlisted)
-    .sort(byDateAndAlphabetical())
-
-  // folders not in SECTIONS keep their name as written in the vault (slugs are lowercased)
-  const folderName = (key: string) => {
-    const f = notes.find((n) => n.slug!.startsWith(key + "/"))
-    const parts = f?.filePath?.split("/")
-    return parts ? parts[parts.length - f!.slug!.split("/").length] : unslug(key)
-  }
-  const section = (key: string) =>
-    SECTIONS[key] ?? { name: folderName(key), short: folderName(key), desc: "" }
-
-  const keys = [...new Set(notes.map((f) => f.slug!.split("/")[0]))].sort((a, b) => {
-    const order = Object.keys(SECTIONS)
-    const ia = order.indexOf(a),
-      ib = order.indexOf(b)
-    return (ia < 0 ? order.length : ia) - (ib < 0 ? order.length : ib)
-  })
-
-  const days: { date: Date; notes: QuartzPluginData[] }[] = []
-  for (const f of notes) {
-    const d = getDate(f)!
-    const last = days[days.length - 1]
-    if (last && dayKey(last.date) === dayKey(d)) last.notes.push(f)
-    else days.push({ date: d, notes: [f] })
-  }
-
-  const meta = (f: QuartzPluginData) => {
-    const parts = f.slug!.split("/")
-    const dir = parts.slice(0, -1).join("/") + "/"
-    // a subfolder's index note (Obsidian folder note) stands for the whole folder
-    const isFolderNote = parts.length > 2 && parts[parts.length - 1] === "index"
-    const folderNote = parts.length > 2 ? notes.find((n) => n.slug === dir + "index") : undefined
-    const tag = f.frontmatter?.tags?.[0]
-    return [
-      section(parts[0]).name,
-      !isFolderNote && parts.length > 2
-        ? (folderNote?.frontmatter?.title ??
-          f.filePath?.split("/").at(-2) ??
-          unslug(parts[parts.length - 2]))
-        : undefined,
-      isFolderNote
-        ? `${notes.filter((n) => n !== f && n.slug!.startsWith(dir)).length} 篇`
-        : `${minutes(f.text)} min`,
-      tag ? `#${tag}` : undefined,
-    ].filter(Boolean)
-  }
+  const c = chronicle(componentData.allFiles)
+  const { notes, keys, section } = c
 
   // the section filter is pure CSS (radio + :has), so it survives SPA navigation without a script
   const filterCss = keys
@@ -100,11 +27,7 @@ function Chronicle({ componentData, left, footer: Footer }: PageFrameProps) {
 
   return (
     <>
-      <header class="home-nav">
-        {left.map((C) => (
-          <C {...componentData} />
-        ))}
-      </header>
+      <Nav left={left} componentData={componentData} />
       <main class="center chron">
         <style dangerouslySetInnerHTML={{ __html: filterCss }} />
         <header class="top">
@@ -125,7 +48,7 @@ function Chronicle({ componentData, left, footer: Footer }: PageFrameProps) {
               <label class={`chip sec-${i % 6}`}>
                 <input type="radio" name="home-sec" value={String(i)} />
                 <i class="dot" />
-                {section(k).short} <b>{notes.filter((f) => f.slug!.startsWith(k + "/")).length}</b>
+                {section(k).short} <b>{c.inFolder(k).length}</b>
               </label>
             ))}
           </div>
@@ -137,36 +60,7 @@ function Chronicle({ componentData, left, footer: Footer }: PageFrameProps) {
             ) : null,
           )}
         </header>
-        {days.map(({ date, notes: dayNotes }) => (
-          <section class="day">
-            <div class="date">
-              <b>
-                {MONTHS[date.getMonth()]} {date.getDate()}
-              </b>
-              {date.getFullYear()}
-            </div>
-            <div>
-              {dayNotes.map((f) => {
-                const i = keys.indexOf(f.slug!.split("/")[0])
-                const description = f.frontmatter?.description as string | undefined
-                return (
-                  <a
-                    class={`entry internal sec-${i % 6}`}
-                    data-sec={String(i)}
-                    href={resolveRelative(here, f.slug!)}
-                  >
-                    <span class="k">
-                      <i class="dot" />
-                      {meta(f).join(" · ")}
-                    </span>
-                    <h3>{f.frontmatter?.title}</h3>
-                    {description && <p>{description}</p>}
-                  </a>
-                )
-              })}
-            </div>
-          </section>
-        ))}
+        <Days here={here} list={notes} c={c} />
         <section class="about">
           <span class="label">About</span>
           <div>
@@ -181,40 +75,155 @@ function Chronicle({ componentData, left, footer: Footer }: PageFrameProps) {
   )
 }
 
+type TocEntry = { depth: number; text: string; slug: string }
+
+function Note({
+  componentData,
+  left,
+  pageBody: Content,
+  afterBody,
+  footer: Footer,
+}: PageFrameProps) {
+  const f = componentData.fileData
+  const here = f.slug!
+  const c = chronicle(componentData.allFiles)
+  const key = here.split("/")[0]
+  const i = c.secIndex(here)
+  const date = getDate(f)
+  const tags = tagsOf(f)
+  const toc = (f.toc as TocEntry[] | undefined) ?? []
+  const link = (slug: string, text: string) => (
+    <a href={resolveRelative(here, slug as FullSlug)} class="internal">
+      {text}
+    </a>
+  )
+
+  const linkedFrom = c.notes.filter((n) => n !== f && n.links?.includes(simplifySlug(here)))
+  const sameTag = c.notes
+    .filter((n) => n.slug !== here && !linkedFrom.includes(n))
+    .filter((n) => tagsOf(n).some((t) => tags.includes(t)))
+    .slice(0, 3)
+  // prev/next walk the whole chronicle by date, the same order as the homepage
+  const pos = c.notes.findIndex((n) => n.slug === here)
+  const newer = pos > 0 ? c.notes[pos - 1] : undefined
+  const older = pos >= 0 ? c.notes[pos + 1] : undefined
+  const short = (n: typeof f) => {
+    const d = getDate(n)
+    return d ? `${MONTHS[d.getMonth()]} ${d.getDate()}` : ""
+  }
+  const list = (ns: typeof c.notes) =>
+    ns.map((n, j) => [j > 0 && ", ", link(n.slug!, n.frontmatter?.title ?? n.slug!)])
+
+  return (
+    <>
+      <Nav left={left} componentData={componentData} />
+      <main class="center chron note">
+        <header class={`top sec-${i % 6}`}>
+          <div class="kicker">
+            {i >= 0 && <i class="dot" />}
+            {[
+              here.includes("/") && link(`${key}/index`, c.section(key).name),
+              <span>{minutes(f.text)} min</span>,
+              ...tags.map((t) => link(`tags/${t}`, `#${t}`)),
+            ]
+              .filter(Boolean)
+              .flatMap((el, j) => (j > 0 ? [<span aria-hidden="true">·</span>, el] : [el]))}
+          </div>
+          <h1>{f.frontmatter?.title}</h1>
+          {f.frontmatter?.description && <p class="deck">{f.frontmatter.description as string}</p>}
+        </header>
+
+        <section class="day">
+          <aside class="date">
+            {date && (
+              <>
+                <b>
+                  {MONTHS[date.getMonth()]} {date.getDate()}
+                </b>
+                {date.getFullYear()}
+              </>
+            )}
+            {toc.length > 0 && (
+              <nav class="note-toc" aria-label="Contents">
+                <span class="label">Contents</span>
+                <ul>
+                  {toc.map((t) => (
+                    <li class={`d${t.depth}`}>
+                      <a href={`#${t.slug}`}>{t.text}</a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
+          </aside>
+          <div class="note-body">
+            <Content {...componentData} />
+          </div>
+        </section>
+
+        {(linkedFrom.length > 0 || sameTag.length > 0) && (
+          <p class="holes related">
+            {linkedFrom.length > 0 && <>Linked from {list(linkedFrom)}. </>}
+            {sameTag.length > 0 && (
+              <>
+                More in {tags.map((t, j) => [j > 0 && " ", link(`tags/${t}`, `#${t}`)])}:{" "}
+                {list(sameTag)}.
+              </>
+            )}
+          </p>
+        )}
+
+        <nav class="pn" aria-label="Newer and older notes">
+          {newer ? (
+            <a href={resolveRelative(here, newer.slug!)} class="internal">
+              <span>← Newer · {short(newer)}</span>
+              <strong>{newer.frontmatter?.title}</strong>
+            </a>
+          ) : (
+            <span class="none">
+              <span>← Newer</span>
+              <strong>This is the latest note</strong>
+            </span>
+          )}
+          {older ? (
+            <a href={resolveRelative(here, older.slug!)} class="internal">
+              <span>Older · {short(older)} →</span>
+              <strong>{older.frontmatter?.title}</strong>
+            </a>
+          ) : (
+            <span class="none">
+              <span>Older →</span>
+              <strong>This is the first note</strong>
+            </span>
+          )}
+        </nav>
+
+        <div class="page-footer">
+          {afterBody.map((C) => (
+            <C {...componentData} />
+          ))}
+        </div>
+      </main>
+      <Footer {...componentData} />
+    </>
+  )
+}
+
 /**
- * Homepage frame — a reverse-chronological "chronicle" of every note, grouped by day,
- * with a CSS-only section filter. Every page other than the index falls back to the
- * default three-column layout, so this can be set as the `content` page type's template.
+ * Content-page frame. The index renders as the homepage chronicle (every note, grouped by
+ * day, with a CSS-only section filter); every other note renders in the same look, with the
+ * date and table of contents in the left column.
  */
 export const HomeFrame: PageFrame = {
   name: "home",
   render(props: PageFrameProps) {
-    return props.componentData.fileData.slug === "index"
-      ? Chronicle(props)
-      : DefaultFrame.render(props)
+    return props.componentData.fileData.slug === "index" ? Home(props) : Note(props)
   },
-  css: `
-body[data-slug="index"] #quartz-body { display: block; max-width: 860px; margin: 0 auto; padding: 0 2rem; }
-.home-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 0; }
-.home-nav .page-title { margin: 0; font-size: 1.15rem; }
-body[data-slug="index"] .home-nav > .page-title { display: block; } /* the theme hides it on phones; here it is the only way home */
-.home-nav .explorer, .home-nav .readermode, .home-nav .mobile-only { display: none; }
-.home-nav .flex-component { flex: 0 1 260px; }
-
-.home-nav, .chron { --hf: "Schibsted Grotesk", system-ui, sans-serif; --bf: "Source Sans Pro", "Source Sans 3", system-ui, sans-serif; --mf: "IBM Plex Mono", ui-monospace, monospace; }
-.home-nav .page-title { font-family: var(--hf); font-weight: 700; letter-spacing: -0.01em; }
-.chron { font-family: var(--bf); --c0: #6f9a8f; --c1: #284b63; --c2: #a8743f; --c3: #84638a; --c4: #8f7f3e; --c5: #a35f5f; --quiet: color-mix(in srgb, var(--darkgray) 78%, var(--light)); }
-:root[saved-theme="dark"] .chron { --c0: #84a59d; --c1: #7b97aa; --c2: #c9995f; --c3: #b08fb3; --c4: #c2b36e; --c5: #cf8e8e; }
-.chron .sec-0 { --c: var(--c0); } .chron .sec-1 { --c: var(--c1); } .chron .sec-2 { --c: var(--c2); } .chron .sec-3 { --c: var(--c3); } .chron .sec-4 { --c: var(--c4); } .chron .sec-5 { --c: var(--c5); }
-.chron .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--gray)); flex: none; }
-.chron .top { padding: 1.9rem 0 1.6rem; }
-.chron h1 { font-family: var(--hf); font-weight: 600; font-size: clamp(26px, 3.6vw, 36px); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 10px; }
-.chron .holes, .chron .secdesc { margin: 0 0 20px; color: var(--quiet); font-family: var(--mf); font-size: 12px; max-width: 64ch; }
-.chron .holes { line-height: 1.5; }
-.chron .holes a { color: inherit; background: none; padding: 0; border-bottom: 1px solid var(--lightgray); font-weight: inherit; transition: color 150ms ease-out; }
-.chron .holes a:hover { color: var(--darkgray); }
-.chron .secdesc { display: none; margin: 12px 0 0; }
+  css:
+    sharedCss +
+    `
 .chron .chips { display: flex; flex-wrap: wrap; gap: 6px; font-family: var(--mf); font-size: 12px; }
+.chron .secdesc { display: none; margin: 12px 0 0; }
 .chron .chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--lightgray); color: var(--dark); cursor: pointer; user-select: none; transition: background-color 150ms ease-out, border-color 150ms ease-out; }
 .chron .chip:hover { border-color: var(--gray); }
 .chron .chip:active { transform: scale(0.97); }
@@ -222,26 +231,45 @@ body[data-slug="index"] .home-nav > .page-title { display: block; } /* the theme
 .chron .chip:has(input:checked) { background: var(--dark); border-color: var(--dark); color: var(--light); }
 .chron .chip:has(input:focus-visible) { outline: 2px solid var(--secondary); outline-offset: 2px; }
 .chron .chip b { font-weight: 500; opacity: 0.7; }
-.chron .day { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 28px; border-top: 1px solid var(--dark); }
-.chron .date { position: sticky; top: 0; align-self: start; padding: 14px 0; font-family: var(--mf); font-size: 12px; color: var(--darkgray); }
-.chron .date b { display: block; font-family: var(--hf); font-weight: 600; font-size: 22px; color: var(--dark); letter-spacing: -0.01em; }
-.chron a.entry { display: block; padding: 16px 0 18px; border-bottom: 1px solid var(--lightgray); color: inherit; background: none; font-weight: inherit; border-radius: 0; }
-.chron a.entry:last-child { border-bottom: 0; }
-.chron .entry .k { display: flex; align-items: center; gap: 8px; font-family: var(--mf); font-size: 11px; color: var(--gray); }
-.chron .entry h3 { margin: 4px 0; font-family: var(--hf); font-weight: 600; font-size: 19px; line-height: 1.3; letter-spacing: -0.01em; color: var(--dark); transition: color 150ms ease-out; }
-.chron .entry:hover h3 { color: var(--secondary); }
-.chron .entry p { margin: 2px 0 0; color: var(--quiet); font-size: 14px; line-height: 1.5; max-width: 60ch; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .chron .about { margin-top: 56px; display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 24px; border-top: 1px solid var(--dark); padding-top: 16px; }
-.chron .about .label { font-family: var(--mf); font-size: 11px; letter-spacing: 0.08em; color: var(--gray); text-transform: uppercase; }
 .chron .about p { margin: 0 0 10px; color: var(--darkgray); max-width: 62ch; }
+
+/* note page */
+.note .date { top: 12px; }
+.note-toc { margin-top: 22px; }
+.note-toc ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: calc(100vh - 180px); overflow: auto; font-size: 11.5px; line-height: 1.45; }
+.note-toc li { margin: 0; line-height: 1.45; } /* the theme sets li line-height in rem */
+.note-toc a { display: block; padding: 3px 0 3px 8px; border-left: 1px solid var(--lightgray); color: var(--gray); background: none; font-weight: inherit; border-radius: 0; transition: color 150ms ease-out, border-color 150ms ease-out; }
+.note-toc .d1 a { padding-left: 16px; font-size: 11px; } .note-toc .d2 a { padding-left: 24px; font-size: 11px; }
+.note-toc a:hover { color: var(--dark); }
+.note-toc a.cur { border-color: var(--dark); color: var(--dark); }
+.note-body { padding: 14px 0 40px; min-width: 0; }
+.note-body article > * > :not(figure, table, .table-container, img, pre) { max-width: 66ch; }
+.note-body article :is(h1, h2, h3, h4) { scroll-margin-top: 16px; }
+.note-body article img { display: block; max-width: 100%; height: auto; border: 1px solid var(--lightgray); border-radius: 6px; cursor: zoom-in; }
+.note-body article a > img { cursor: pointer; }
+.note-body article table { border-collapse: collapse; font-size: 14px; }
+.note-body article :is(th, td) { border: 0; border-bottom: 1px solid var(--lightgray); padding: 8px 16px 8px 0; text-align: left; vertical-align: top; }
+.note-body article th { font-family: var(--mf); font-size: 11px; font-weight: 500; color: var(--gray); border-bottom-color: var(--dark); }
+.img-zoom { position: fixed; inset: 0; z-index: 999; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--light) 92%, transparent); cursor: zoom-out; opacity: 0; transition: opacity 150ms ease-out; }
+.img-zoom.on { opacity: 1; }
+.img-zoom img { max-width: 100%; max-height: 100%; border-radius: 6px; box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18); }
+.chron .related { margin: 0 0 28px 140px; }
+.chron .pn { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--lightgray); }
+.chron .pn > * { display: block; padding: 16px 0; border-bottom: 1px solid var(--lightgray); background: none; font-weight: inherit; border-radius: 0; }
+.chron .pn > * + * { text-align: right; border-left: 1px solid var(--lightgray); padding-left: 16px; }
+.chron .pn span { display: block; font-family: var(--mf); font-size: 11px; color: var(--gray); }
+.chron .pn strong { font-family: var(--hf); font-weight: 600; font-size: 16px; color: var(--dark); transition: color 150ms ease-out; }
+.chron .pn a:hover strong { color: var(--secondary); }
+.chron .pn .none strong { color: var(--gray); font-weight: 500; }
+.note .page-footer { margin-top: 40px; }
 @media (max-width: 800px) {
-  body[data-slug="index"] #quartz-body { padding: 0 1rem; }
-  .home-nav { flex-wrap: wrap; }
-  .chron .day { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .chron .date { position: relative; padding-bottom: 0; }
-  .chron .date b { display: inline; font-size: 16px; margin-right: 8px; }
   .chron .about { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .note-toc { display: none; }
+  .chron .related { margin-left: 0; }
+  .chron .pn { grid-template-columns: minmax(0, 1fr); }
+  .chron .pn > * + * { border-left: 0; padding-left: 0; }
 }
-@media (prefers-reduced-motion: reduce) { .chron * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .img-zoom { transition: none; } }
 `,
 }

@@ -58,14 +58,9 @@ strong{font-weight:500;color:var(--ink)}
 .hand{display:flex;flex-wrap:wrap;gap:10px 16px}
 .hand.gapT{margin-top:24px}
 .grp{display:inline-flex;padding-left:1px}
-.t{width:42px;height:62px;padding:5px;margin-left:-1px;display:inline-flex;flex-wrap:wrap;align-content:center;justify-content:center;row-gap:3px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:900 19px/1 "Noto Serif SC",serif}
-.t i{width:8px;height:8px;margin:0 1px;border-radius:50%;background:currentColor}
-.t b{width:4px;height:13px;margin:0 3px;border-radius:2px;background:currentColor}
-.t em{width:100%;text-align:center;font-style:normal}
-.t em+em{font-size:12px}
-.t em.big{font-size:24px}
-.t .frame{width:22px;height:38px;border:1px solid currentColor}
-.t.c,.t.r{color:var(--red)}
+.t{width:42px;height:62px;padding:5px;margin-left:-1px;display:inline-block;border:1px solid #16130f52;background:#f6f3ec}
+.t img{display:block;width:100%;height:100%;object-fit:contain}
+@media(min-width:1000px){.t{width:52px;height:76px;padding:6px}}
 .t.in{animation:drop 280ms cubic-bezier(.23,1,.32,1) both;border-color:var(--ink)}
 @keyframes drop{from{opacity:0;transform:translateY(-10px)}}
 
@@ -127,7 +122,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,select:focus-visible,
   .rows.gl li{grid-template-columns:auto 1fr}
   .rows.gl li span:last-child{grid-column:1/-1}
 }
-@media(max-width:420px){.t{width:36px;height:54px;padding:3px}.t i{width:7px;height:7px}.t b{margin:0 2.5px;height:11px}.t em.big{font-size:21px}.t .frame{width:18px;height:32px}}
+@media(max-width:420px){.t{width:36px;height:54px;padding:3px}}
 @media(max-width:374px){.hand{zoom:.84}}
 @media(max-width:700px) and (max-height:700px){.hero .vt{display:none}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
@@ -406,12 +401,13 @@ button:focus-visible,a:focus-visible,summary:focus-visible,select:focus-visible,
 </main>
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const SUITS={D:'Dots',B:'Bamboo',C:'Characters'}, NUM='一二三四五六七八九';
+const SUITS={D:'Dots',B:'Bamboo',C:'Characters'};
 const HONOR={東:'East wind',南:'South wind',西:'West wind',北:'North wind',中:'Red dragon',發:'Green dragon',白:'White dragon',春:'Spring',夏:'Summer',秋:'Autumn',冬:'Winter',梅:'Plum blossom',蘭:'Orchid',竹:'Bamboo plant',菊:'Chrysanthemum'};
 const tileName=t=>HONOR[t]||`${t[0]} of ${SUITS[t[1]]}`;
-const face=t=>HONOR[t]?(t=='白'?'<span class="frame"></span>':`<em class="big">${t}</em>`):
-  t[1]=='D'?'<i></i>'.repeat(t[0]):t[1]=='B'?'<b></b>'.repeat(t[0]):`<em>${NUM[t[0]-1]}</em><em>萬</em>`;
-const tile=(t,cls='')=>`<span class="t ${HONOR[t]?(t=='中'?'r':'h'):t[1].toLowerCase()} ${cls}" role="img" aria-label="${tileName(t)}">${face(t)}</span>`;
+// tile art: FluffyStuff/riichi-mahjong-tiles (CC0), recoloured to the page palette; flowers, seasons and white dragon are outlines of Yuji Boku (OFL)
+const ART={D:'Pin',B:'Sou',C:'Man',東:'Ton',南:'Nan',西:'Shaa',北:'Pei',中:'Chun',發:'Hatsu',白:'Haku',春:'Spring',夏:'Summer',秋:'Autumn',冬:'Winter',梅:'Plum',蘭:'Orchid',竹:'Bamboo',菊:'Mum'};
+const face=t=>`<img src="tiles/${ART[t]||ART[t[1]]+t[0]}.svg" alt="">`;
+const tile=(t,cls='')=>`<span class="t ${cls}" role="img" aria-label="${tileName(t)}">${face(t)}</span>`;
 // "1C 2C 3C|9D 9D" → groups of tiles
 const groups=s=>s.split('|').map(g=>`<span class="grp">${g.split(' ').map(t=>tile(t)).join('')}</span>`).join('');
 const H=s=>`<span class="hand">${groups(s)}</span>`;

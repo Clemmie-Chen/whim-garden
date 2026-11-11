@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shanghai Mahjong</title>
+<meta name="description" content="Learn Shanghai mahjong from zero: four sets, one pair, and everything that follows.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Noto+Serif+SC:wght@400;900&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f6f3ec;--ink:#16130f;--red:#b8271c;--mut:#4a443b;--line:color-mix(in srgb,var(--ink) 32%,transparent)}
+.inv{--paper:#16130f;--ink:#f6f3ec;--red:#ec6a58;--mut:#cfc8ba;--line:color-mix(in srgb,var(--ink) 38%,transparent)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-snap-type:y proximity}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 21px/1.45 "Cormorant Garamond",Georgia,serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ol,ul{margin:0;padding:0}
+ol,ul{list-style:none}
+a{color:inherit}
+.zh{font-family:"Noto Serif SC",serif;font-size:.86em}
+.py{font-style:italic}
+h1{font:italic 400 clamp(52px,8vw,108px)/.95 "Cormorant Garamond",serif;letter-spacing:-.01em}
+h2{font:italic 400 clamp(40px,5.4vw,64px)/1 "Cormorant Garamond",serif;letter-spacing:-.01em;margin-bottom:24px;text-wrap:balance}
+h3{font:500 28px/1.2 "Cormorant Garamond",serif;margin-top:44px}
+h3 .zh{font-weight:900;margin-left:6px}
+h3 .py{font-weight:400;font-size:19px;color:var(--mut)}
+p{max-width:34em;color:var(--mut)}
+p+p{margin-top:14px}
+strong{font-weight:500;color:var(--ink)}
+.seal{display:inline-block;background:var(--red);color:var(--paper);font:900 14px/1.15 "Noto Serif SC",serif;padding:6px 5px;writing-mode:vertical-rl}
+.glyph{font:900 1em/1 "Noto Serif SC",serif;color:var(--ink);pointer-events:none;user-select:none}
+.vt{writing-mode:vertical-rl;font:400 15px/1 "Noto Serif SC",serif;letter-spacing:.5em}
+
+/* plates */
+.plate{position:relative;min-height:100dvh;scroll-snap-align:start;overflow:clip;display:grid;grid-template-columns:minmax(0,38%) minmax(0,1fr);align-items:center;background:var(--paper);color:var(--ink)}
+.plate>.glyph{font-size:clamp(240px,40vw,600px);margin-left:-.22em;line-height:.9;position:sticky;top:calc(50dvh - .45em);align-self:start}
+.body{padding:72px 56px 96px 0;max-width:680px}
+.hero{display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;padding:120px clamp(24px,7vw,96px) 110px}
+.hero .glyph{position:absolute;right:-.1em;top:-.06em;margin:0;font-size:clamp(260px,50vw,640px);line-height:1}
+.hero .vt{position:absolute;left:clamp(24px,7vw,96px);top:100px}
+.hero .seal{margin-bottom:28px}
+.hero p{margin-top:22px;max-width:21em}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}}
+.enter{animation:rise 700ms cubic-bezier(.23,1,.32,1) both}
+.enter.d1{animation-delay:90ms}
+
+.dots{position:fixed;right:8px;top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;mix-blend-mode:difference}
+.dots a{width:28px;height:24px;display:grid;place-items:center}
+.dots a.gap{margin-top:10px}
+.dots a::after{content:"";width:5px;height:5px;border-radius:3px;background:#f6f3ec;transition:height 200ms ease-out}
+.dots a[data-on]::after{height:18px}
+@media(max-height:560px){.dots{display:none}}
+
+/* tiles */
+.hand{display:flex;flex-wrap:wrap;gap:10px 16px}
+.hand.gapT{margin-top:24px}
+.grp{display:inline-flex;padding-left:1px}
+.t{width:42px;height:62px;padding:5px;margin-left:-1px;display:inline-flex;flex-wrap:wrap;align-content:center;justify-content:center;row-gap:3px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:900 19px/1 "Noto Serif SC",serif}
+.t i{width:8px;height:8px;margin:0 1px;border-radius:50%;background:currentColor}
+.t b{width:4px;height:13px;margin:0 3px;border-radius:2px;background:currentColor}
+.t em{width:100%;text-align:center;font-style:normal}
+.t em+em{font-size:12px}
+.t em.big{font-size:24px}
+.t .frame{width:22px;height:38px;border:1px solid currentColor}
+.t.c,.t.r{color:var(--red)}
+.t.in{animation:drop 280ms cubic-bezier(.23,1,.32,1) both;border-color:var(--ink)}
+@keyframes drop{from{opacity:0;transform:translateY(-10px)}}
+
+.suit,.def{margin-top:32px}
+.suit h3,.def h3{margin-top:0}
+.suit p,.def p{margin:2px 0 12px}
+.note{margin-top:32px;padding-left:16px;border-left:1px solid var(--ink)}
+
+/* lists */
+.steps,.rows{margin-top:24px;border-bottom:1px solid var(--line)}
+.steps{counter-reset:s}
+.steps li{counter-increment:s;position:relative;padding:10px 0 10px 2em;border-top:1px solid var(--line);color:var(--mut)}
+.steps li::before{content:counter(s);position:absolute;left:0;font-style:italic;color:var(--ink)}
+.rows li{display:grid;grid-template-columns:1fr auto;gap:2px 16px;padding:10px 0;border-top:1px solid var(--line);color:var(--mut)}
+.rows .k{color:var(--ink);font-weight:500}
+.rows .k .py{font-weight:400;color:var(--mut)}
+.rows .v{color:var(--ink);font-style:italic;text-align:right}
+.rows .d{grid-column:1/-1;font-size:19px}
+.rows.gl li{grid-template-columns:6.5em 10em 1fr;font-size:19px}
+.rows.plain li{display:block}
+.src{margin-top:28px;font-size:17px}
+
+/* widgets */
+.btn{min-height:40px;padding:6px 12px;border:1px solid var(--line);background:none;color:var(--ink);font:italic 400 18px/1 "Cormorant Garamond",serif;cursor:pointer;transition:border-color 150ms ease-out,transform 100ms ease-out}
+.btn:active,.cand:active{transform:scale(.97)}
+.quiz{margin-top:28px}
+.q{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding:16px 0;border-top:1px solid var(--line)}
+.opts{display:flex;gap:6px}
+.opts .btn[aria-pressed=true]{color:var(--mut);text-decoration:line-through}
+.q[data-ok=true] .btn[aria-pressed=true],.seats .btn[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper);text-decoration:none}
+.fb{flex-basis:100%;min-height:1.45em;font-size:19px;font-style:italic}
+.ready{margin-top:28px}
+.pick{display:flex;flex-wrap:wrap;gap:4px;margin:22px 0 10px -6px}
+.cand{padding:6px;border:0;background:none;cursor:pointer;transition:transform 150ms ease-out}
+.seats{display:inline-grid;grid-template-columns:repeat(3,auto);gap:10px;place-items:center;margin:28px 0 12px}
+.seats .you{font-style:italic;color:var(--mut)}
+.calc{margin-top:24px;display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end}
+.calc label{display:grid;gap:4px;font-size:17px;font-style:italic;color:var(--mut)}
+.calc select,.calc input{height:44px;padding:0 10px;border:1px solid var(--line);border-radius:0;background:var(--paper);color:var(--ink);font:400 20px "Cormorant Garamond",serif}
+.calc input{width:5em}
+.sum{flex-basis:100%;font:italic 400 clamp(30px,4vw,44px)/1.1 "Cormorant Garamond",serif;color:var(--ink);max-width:none}
+details{border-top:1px solid var(--line);padding:12px 0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;color:var(--ink)}
+summary .hand{margin:10px 0 4px}
+details p{margin-top:8px;font-style:italic}
+button:focus-visible,a:focus-visible,summary:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+@media(hover:hover){.btn:hover{border-color:var(--ink)}.cand:hover{transform:translateY(-4px)}}
+
+@media(max-width:700px){
+  .plate{display:block}
+  .plate>.glyph{display:block;position:static;font-size:200px;margin:-20px 0 0 -40px}
+  .body{padding:28px 40px 96px 20px}
+  .hero{display:flex}
+  .rows.gl li{grid-template-columns:auto 1fr}
+  .rows.gl li span:last-child{grid-column:1/-1}
+}
+@media(max-width:420px){.t{width:36px;height:54px;padding:3px}.t i{width:7px;height:7px}.t b{margin:0 2.5px;height:11px}.t em.big{font-size:21px}.t .frame{width:18px;height:32px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<nav class="dots" aria-label="Chapters"></nav>
+<main>
+
+<section class="plate hero" data-n="Start">
+  <span class="glyph enter" aria-hidden="true">胡</span>
+  <span class="vt" aria-hidden="true">四組一對　即可胡牌</span>
+  <span class="seal" aria-hidden="true">麻將</span>
+  <h1 class="enter d1">Four sets,<br>one pair.</h1>
+  <p class="enter d1">Collect four sets and one pair before anyone else, and you win. Every other rule in Shanghai mahjong builds on that one idea.</p>
+</section>
+
+<section class="plate" data-n="What mahjong is">
+  <span class="glyph" aria-hidden="true">麻</span>
+  <div class="body">
+    <h2>What mahjong is</h2>
+    <p>Four players sit around a square table. Instead of cards there are tiles. On your turn you draw one tile and discard one, slowly shaping your hand into sets.</p>
+    <p>If you have played Rummy, you already know the feeling.</p>
+    <p class="note">In Shanghai people say <span class="zh">搓麻将</span> <span class="py">cuō májiàng</span>, “rubbing mahjong”, after the sound of tiles being shuffled by hand.</p>
+  </div>
+</section>
+
+<section class="plate" data-n="The tiles">
+  <span class="glyph" aria-hidden="true">牌</span>
+  <div class="body">
+    <h2>The tiles</h2>
+    <p>Forget the full set for now. Start with three suits, each numbered 1 to 9, four copies of every tile: 108 in all.</p>
+    <div class="suit"><h3>Dots<span class="zh">筒</span> <span class="py">tǒng</span></h3><p>Count the circles.</p><span data-h="1D 2D 3D 4D 5D 6D 7D 8D 9D"></span></div>
+    <div class="suit"><h3>Bamboo<span class="zh">条</span> <span class="py">tiáo</span></h3><p>Count the sticks. On a real set, the 1 is a bird.</p><span data-h="1B 2B 3B 4B 5B 6B 7B 8B 9B"></span></div>
+    <div class="suit"><h3>Characters<span class="zh">万</span> <span class="py">wàn</span></h3><p>The top symbol is a Chinese number, one to nine.</p><span data-h="1C 2C 3C 4C 5C 6C 7C 8C 9C"></span></div>
+  </div>
+</section>
+
+<section class="plate" data-n="Sets and pairs">
+  <span class="glyph" aria-hidden="true">組</span>
+  <div class="body">
+    <h2>Sets and pairs</h2>
+    <p>Everything you build is one of three shapes.</p>
+    <div class="def"><h3>Run<span class="zh">顺子</span> <span class="py">shùnzi</span></h3><p>Three in a row, in one suit.</p><span data-h="3D 4D 5D"></span></div>
+    <div class="def"><h3>Triplet<span class="zh">刻子</span> <span class="py">kèzi</span></h3><p>Three identical tiles.</p><span data-h="7B 7B 7B"></span></div>
+    <div class="def"><h3>Pair<span class="zh">对子</span> <span class="py">duìzi</span></h3><p>Two identical tiles.</p><span data-h="9C 9C"></span></div>
+    <p class="note">A run never mixes suits, and it never wraps around: 8, 9, 1 is nothing.</p>
+  </div>
+</section>
+
+<section class="plate" data-n="Try it">
+  <span class="glyph" aria-hidden="true">試</span>
+  <div class="body">
+    <h2>Run, triplet, or neither?</h2>
+    <p>Four groups of three. Name each one.</p>
+    <div id="quiz"></div>
+  </div>
+</section>
+
+<section class="plate inv" data-n="The winning hand">
+  <span class="glyph" aria-hidden="true">胡</span>
+  <div class="body">
+    <h2>The winning hand</h2>
+    <p>A winning hand is four sets and one pair: 3 + 3 + 3 + 3 + 2 = 14 tiles. Runs and triplets mix freely.</p>
+    <span class="hand gapT" data-h="1C 2C 3C|4D 5D 6D|7B 7B 7B|3B 4B 5B|9D 9D"></span>
+    <h3>Not yet</h3>
+    <p>Swap one tile and the hand falls apart. 3, 4, 6 of Bamboo skips a number, so it is not a run.</p>
+    <span class="hand gapT" data-h="1C 2C 3C|4D 5D 6D|7B 7B 7B|3B 4B 6B|9D 9D"></span>
+  </div>
+</section>
+
+<section class="plate" data-n="Ready">
+  <span class="glyph" aria-hidden="true">聽</span>
+  <div class="body">
+    <h2>One tile away</h2>
+    <p>You hold 13 tiles. When a single tile would finish the hand you are ready, <span class="zh">听牌</span> <span class="py">tīngpái</span>. This hand is ready. Which tile lets you call <span class="py">Hú</span>?</p>
+    <div id="ready"></div>
+  </div>
+</section>
+
+<section class="plate" data-n="Draw one, discard one">
+  <span class="glyph" aria-hidden="true">摸</span>
+  <div class="body">
+    <h2>Draw one, discard one</h2>
+    <ol class="steps">
+      <li>You hold 13 tiles.</li>
+      <li>On your turn, draw one from the wall. Now you have 14.</li>
+      <li>If they form four sets and a pair, call <span><span class="py">Hú!</span> <span class="zh">胡</span> You win.</span></li>
+      <li>If not, discard one tile face up. Play moves to the player on your right.</li>
+    </ol>
+    <h3>Your first game</h3>
+    <p>You can play right now with a simple version. Use only the 108 number tiles. Everyone takes 13; the dealer takes 14 and discards first. Keep all hands face up so everyone learns from everyone, and draw only from the wall. If the wall runs out before anyone wins, deal again.</p>
+  </div>
+</section>
+
+<section class="plate" data-n="The full set" data-gap>
+  <span class="glyph" aria-hidden="true">風</span>
+  <div class="body">
+    <h2>The full set</h2>
+    <p>A Shanghai set has 144 tiles: the 108 number tiles plus 36 more.</p>
+    <div class="suit"><h3>Winds</h3><p>East, South, West, North. 16 tiles. Triplets and pairs only, never runs.</p><span data-h="東 南 西 北"></span></div>
+    <div class="suit"><h3>Dragons</h3><p>Red, Green, White. 12 tiles. In Shanghai they count as flowers.</p><span data-h="中 發 白"></span></div>
+    <div class="suit"><h3>Flowers and seasons</h3><p>8 bonus tiles, never part of your hand.</p><span data-h="春 夏 秋 冬|梅 蘭 竹 菊"></span></div>
+    <p class="note">Draw a flower, lay it face up, and take a replacement from the back of the wall. This is <span class="py">bǔhuā</span> <span class="zh">补花</span>. Flowers do not finish your hand, but they make a win worth more.</p>
+  </div>
+</section>
+
+<section class="plate" data-n="Starting a hand">
+  <span class="glyph" aria-hidden="true">莊</span>
+  <div class="body">
+    <h2>Starting a hand</h2>
+    <ol class="steps">
+      <li>Roll dice to choose the first dealer, <span><span class="zh">庄家</span> <span class="py">zhuāngjiā</span>.</span></li>
+      <li>Build the wall. Most Shanghai mahjong rooms have automatic tables that shuffle and build it for you.</li>
+      <li>The dealer takes 14 tiles. Everyone else takes 13.</li>
+      <li>Starting with the dealer, everyone sets aside their flowers and draws replacements.</li>
+      <li>The dealer discards first. Play moves to the right.</li>
+      <li>Whoever wins becomes the next dealer. If nobody wins, the dealer stays.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="plate" data-n="Taking discards">
+  <span class="glyph" aria-hidden="true">碰</span>
+  <div class="body">
+    <h2>Taking discards</h2>
+    <p>You can also take a tile someone throws away, if it completes a set. The price: that set goes face up on the table and can never change.</p>
+    <ul class="rows">
+      <li><span class="k">Pung <span class="zh">碰</span> <span class="py">pèng</span></span><span class="v">from anyone</span><span class="d">You hold a pair, and someone throws the third.</span></li>
+      <li><span class="k">Chow <span class="zh">吃</span> <span class="py">chī</span></span><span class="v">from your left only</span><span class="d">You hold two tiles of a run, and the missing one is thrown.</span></li>
+      <li><span class="k">Kong <span class="zh">杠</span> <span class="py">gàng</span></span><span class="v">four identical</span><span class="d">Exposed: you hold three and someone throws the fourth. Concealed: you draw all four. Added: you ponged three, then draw the fourth. A kong is one set, so always draw a replacement.</span></li>
+    </ul>
+    <h3>A tile hits the table. Who threw it?</h3>
+    <div class="seats" role="group" aria-label="Who discarded">
+      <span></span><button type="button" class="btn" data-seat="o">Opposite</button><span></span>
+      <button type="button" class="btn" data-seat="l">Left</button><span data-h="5D"></span><button type="button" class="btn" data-seat="r">Right</button>
+      <span></span><span class="you">You</span><span></span>
+    </div>
+    <p class="fb" id="seatfb" aria-live="polite">Pick a seat to see what you may call.</p>
+    <p>Say the call out loud, take the tile, lay the set face up, then discard. If two players want the same tile, a win beats a pung or kong, and a pung or kong beats a chow.</p>
+  </div>
+</section>
+
+<section class="plate" data-n="Two ways to win">
+  <span class="glyph" aria-hidden="true">贏</span>
+  <div class="body">
+    <h2>Two ways to win</h2>
+    <ul class="rows">
+      <li><span class="k">Self-draw <span class="zh">自摸</span> <span class="py">zìmō</span></span><span class="v">all three pay</span><span class="d">You draw the winning tile yourself.</span></li>
+      <li><span class="k">Win on a discard <span class="zh">点炮</span> <span class="py">diǎnpào</span></span><span class="v">the thrower pays</span><span class="d">Someone throws your winning tile.</span></li>
+    </ul>
+    <p style="margin-top:20px">So every discard has two jobs: improve your hand, and avoid handing someone theirs. Tiles already in the discard pile are usually the safest to throw.</p>
+    <h3>One full turn</h3>
+    <ol class="steps">
+      <li>Draw a tile. If it is a flower, show it and draw again.</li>
+      <li>If you can win, call <span class="py">Hú!</span> The hand is over.</li>
+      <li>If you want to declare a kong, show it, draw a replacement, and go back to step 2.</li>
+      <li>Discard one tile.</li>
+      <li>The others react: someone may win on it, pung or kong it, or (the next player only) chow it. If nobody wants it, the next player draws.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="plate inv" data-n="Knocking" data-gap>
+  <span class="glyph" aria-hidden="true">敲</span>
+  <div class="body">
+    <h2>Knock before you win</h2>
+    <p>The most popular style in Shanghai today is Qiao Ma, <span class="zh">敲麻</span> <span class="py">qiāo má</span>, “knock mahjong”. It adds three things: you must knock before you can win, flowers decide how much you win, and every hand has a payout cap.</p>
+    <p>When you are one tile from winning, announce <span class="py">qiāo!</span> <span class="zh">敲</span> and stand one tile up as a signal.</p>
+    <ul class="rows plain">
+      <li><strong>No knock, no win.</strong> Self-draws and discards alike. The only exception is a dealer who wins on the very first 14 tiles.</li>
+      <li><strong>Your hand is frozen.</strong> Any tile you draw that does not win must be thrown away.</li>
+      <li><strong>You must take the win.</strong> If someone throws your winning tile, you cannot wait for a bigger one.</li>
+      <li><strong>Missed win.</strong> Let a winning tile pass, and you cannot win on that same tile until after your next draw.</li>
+    </ul>
+    <p class="note">Knocking tells the whole table you are close. Everyone starts throwing safe tiles and the room goes quiet. That tension is the heart of Shanghai mahjong.</p>
+  </div>
+</section>
+
+<section class="plate" data-n="Counting flowers">
+  <span class="glyph" aria-hidden="true">花</span>
+  <div class="body">
+    <h2>Counting flowers</h2>
+    <p>In Qiao Ma a flower, <span class="zh">花</span> <span class="py">huā</span>, is a scoring point. You earn them from:</p>
+    <ul class="rows">
+      <li><span class="k">Each flower or season tile</span><span class="v">1</span></li>
+      <li><span class="k">Each dragon tile <span class="zh">中 發 白</span></span><span class="v">1</span></li>
+      <li><span class="k">A triplet of winds</span><span class="v">1</span></li>
+      <li><span class="k">A kong of winds, exposed / concealed</span><span class="v">2 / 3</span></li>
+      <li><span class="k">A kong of number tiles, exposed / concealed</span><span class="v">1 / 2</span></li>
+    </ul>
+    <p style="margin-top:20px">To win a plain hand on someone’s discard you need at least one flower. A self-drawn win needs none. Collect all eight flower and season tiles and you win on the spot.</p>
+  </div>
+</section>
+
+<section class="plate" data-n="Scoring">
+  <span class="glyph" aria-hidden="true">番</span>
+  <div class="body">
+    <h2>Scoring</h2>
+    <p>Two numbers decide a win: your flowers, and your hand’s multiplier, <span class="py">fān</span> <span class="zh">番</span>. The total is capped by the <span class="py">lèzi</span> <span class="zh">勒子</span>, often 20 points.</p>
+    <div class="calc">
+      <label>Hand<select id="hand"></select></label>
+      <label>Flowers<input id="fl" type="number" min="0" max="20" value="3" inputmode="numeric"></label>
+      <p class="sum" id="sum" aria-live="polite"></p>
+    </div>
+    <p>On a self-draw each of the three other players pays that amount. On a discard win only the thrower pays.</p>
+    <ul class="rows" id="hands"></ul>
+    <p style="margin-top:20px">The rule of thumb: the purer the hand, the bigger the win. There is no single official rulebook, so Shanghai players agree on flowers, the cap and whether chow is allowed before the first hand.</p>
+  </div>
+</section>
+
+<section class="plate" data-n="At the table">
+  <span class="glyph" aria-hidden="true">桌</span>
+  <div class="body">
+    <h2>At the table</h2>
+    <ul class="rows plain">
+      <li>Say your call out loud before you take a tile: <span class="py">Pèng! Chī! Gàng! Qiāo! Hú!</span></li>
+      <li>A tile that leaves your hand is discarded. You cannot take it back.</li>
+      <li>Keep your discards in neat rows, and never touch another player’s tiles.</li>
+      <li>Don’t rush other players or comment on their hands.</li>
+    </ul>
+    <h3>Tips for your first games</h3>
+    <ul class="rows plain">
+      <li>Throw lonely winds, 1s and 9s early. Middle tiles, 3 to 7, connect more easily.</li>
+      <li>Two tiles side by side (4 and 5) beat two with a gap (4 and 6). The first waits for two tiles, the second for one.</li>
+      <li>Don’t claim everything. Every claim makes your hand less flexible.</li>
+      <li>Once someone knocks, throw tiles that are already in the discard pile.</li>
+    </ul>
+    <h3>Two other Shanghai styles</h3>
+    <p><strong>Wild card</strong> <span class="zh">百搭</span> <span class="py">bǎidā</span>: a tile is flipped at the start and the next one in sequence becomes wild. Usually you can only win by self-draw. <strong>Big hands only</strong> <span class="zh">清混碰</span> <span class="py">qīng hùn pèng</span>: no plain wins, only flushes, all triplets, or both.</p>
+  </div>
+</section>
+
+<section class="plate" data-n="On one page" data-gap>
+  <span class="glyph" aria-hidden="true">總</span>
+  <div class="body">
+    <h2>On one page</h2>
+    <ul class="rows plain">
+      <li><strong>Goal.</strong> 4 sets + 1 pair = 14 tiles. A set is a run (3 in a row, same suit) or a triplet (3 identical).</li>
+      <li><strong>Tiles.</strong> Dots, Bamboo, Characters, 1 to 9, four of each. Winds make triplets and pairs only. Flowers and, in Shanghai, dragons are bonus points: show them and draw again.</li>
+      <li><strong>Your turn.</strong> Draw one, win if you can, otherwise discard one. Play moves to the right.</li>
+      <li><strong>Taking discards.</strong> <span class="py">Pèng</span> from anyone. <span class="py">Chī</span> only from your left. <span class="py">Gàng</span> is four of a kind; then draw a replacement. A win beats pung or kong, which beats chow.</li>
+      <li><strong>Knock.</strong> One tile away, call <span class="py">qiāo</span>. No knock, no win. After knocking, your hand is frozen.</li>
+      <li><strong>Winning.</strong> Self-draw: all three others pay. Win on a discard: only the thrower pays.</li>
+      <li><strong>Scoring.</strong> Score = fan × (1 + flowers), up to the cap. Purer hands pay more.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="plate" data-n="Check yourself">
+  <span class="glyph" aria-hidden="true">問</span>
+  <div class="body">
+    <h2>Check yourself</h2>
+    <p>Five questions. Tap one to see the answer.</p>
+    <div style="margin-top:24px">
+      <details><summary>Is this a winning hand?<span class="hand" data-h="2C 3C 4C|6B 6B 6B|1D 2D 3D|東 東 東|5D 5D"></span></summary><p>Yes. Two runs, two triplets, one pair.</p></details>
+      <details><summary>How many sets is this?<span class="hand" data-h="3D 4D 5D 6D"></span></summary><p>One set plus a spare tile.</p></details>
+      <details><summary>Everything in your hand is complete except the 4 and 5 of Bamboo. Which tiles win?</summary><p>The 3 or the 6 of Bamboo.</p></details>
+      <details><summary>The player opposite you throws the tile that completes your run. Can you chow it?</summary><p>No. Chow only from the player on your left.</p></details>
+      <details><summary>All triplets, 2 flowers, self-drawn. How much does each other player pay?</summary><p>2 × (1 + 2) = 6 points.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="plate" data-n="Glossary">
+  <span class="glyph" aria-hidden="true">詞</span>
+  <div class="body">
+    <h2>Glossary</h2>
+    <ul class="rows gl" id="gloss"></ul>
+    <p class="src">Sources: 上海敲麻游戏规则与玩法 (Baidu Jingyan) for knocking, flower counting, hand values and the cap; 上海麻将 (Chinese Wikipedia) for hand types; 上海百搭麻将规则详解 (CSDN) for wild card rules. Rules vary by table.</p>
+  </div>
+</section>
+
+</main>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const SUITS={D:'Dots',B:'Bamboo',C:'Characters'}, NUM='一二三四五六七八九';
+const HONOR={東:'East wind',南:'South wind',西:'West wind',北:'North wind',中:'Red dragon',發:'Green dragon',白:'White dragon',春:'Spring',夏:'Summer',秋:'Autumn',冬:'Winter',梅:'Plum blossom',蘭:'Orchid',竹:'Bamboo plant',菊:'Chrysanthemum'};
+const tileName=t=>HONOR[t]||`${t[0]} of ${SUITS[t[1]]}`;
+const face=t=>HONOR[t]?(t=='白'?'<span class="frame"></span>':`<em class="big">${t}</em>`):
+  t[1]=='D'?'<i></i>'.repeat(t[0]):t[1]=='B'?'<b></b>'.repeat(t[0]):`<em>${NUM[t[0]-1]}</em><em>萬</em>`;
+const tile=(t,cls='')=>`<span class="t ${HONOR[t]?(t=='中'?'r':'h'):t[1].toLowerCase()} ${cls}" role="img" aria-label="${tileName(t)}">${face(t)}</span>`;
+// "1C 2C 3C|9D 9D" → groups of tiles
+const groups=s=>s.split('|').map(g=>`<span class="grp">${g.split(' ').map(t=>tile(t)).join('')}</span>`).join('');
+const H=s=>`<span class="hand">${groups(s)}</span>`;
+
+/* quiz */
+const QUIZ=[
+  ['2B 3B 4B','run','Three in a row, one suit.'],
+  ['5C 5C 5C','triplet','Three identical tiles.'],
+  ['6D 7D 9D','neither','6, 7, then 9. A run cannot skip a number.'],
+  ['1C 2B 3D','neither','1, 2, 3, but in three different suits.']];
+const OPTS=['run','triplet','neither'];
+$('#quiz').innerHTML=`<div class="quiz">${QUIZ.map(([h,a,why])=>`<div class="q" data-a="${a}" data-why="${why}">${H(h)}<span class="opts">${OPTS.map(o=>`<button type="button" class="btn" data-o="${o}">${o[0].toUpperCase()+o.slice(1)}</button>`).join('')}</span><p class="fb" aria-live="polite"></p></div>`).join('')}</div>`;
+$('#ready').innerHTML=`<div class="ready">${H('1C 2C 3C|4D 5D 6D|7B 7B 7B|9D 9D|4B 5B')}<div class="pick" role="group" aria-label="Candidate tiles">${['6C','3B','5D','6B','4B'].map(t=>`<button type="button" class="cand" data-t="${t}" aria-label="${tileName(t)}">${tile(t)}</button>`).join('')}</div><p class="fb" aria-live="polite">Pick the tile that completes the hand.</p></div>`;
+
+/* scoring */
+const CAP=20;
+const HANDS=[ // [name, chinese, pinyin, needs, fan, cap multiples]
+  ['Plain win','平胡','pínghú','Any 4 sets + 1 pair',1],
+  ['Concealed hand','门前清','ménqiánqīng','No chow, pung or exposed kong',2],
+  ['All triplets','碰碰胡','pèngpènghú','Every set is a triplet or kong',2],
+  ['Half flush','混一色','hùnyīsè','One suit plus winds',2],
+  ['Seven pairs','七对','qīduì','7 pairs, concealed',2],
+  ['Win on a kong draw','杠开','gàngkāi','The replacement tile after a kong wins',2],
+  ['Single wait','大吊车','dàdiàochē','Everything else exposed, waiting on one tile',2],
+  ['Half flush, all triplets','混碰','hùnpèng','Both at once',4],
+  ['Full flush','清一色','qīngyīsè','One suit only',0,1],
+  ['No flowers','无花果','wúhuāguǒ','Zero flowers when you win',0,1],
+  ['Full flush, all triplets','清碰','qīngpèng','Both at once',0,2],
+  ['All winds','风一色','fēngyīsè','Only wind tiles',0,2],
+  ['Eight flowers','八花齐','bāhuāqí','All 8 flower and season tiles',0,2],
+  ['Heavenly win','天胡','tiānhú','Dealer wins on the deal',0,2]];
+const score=(h,f)=>h[5]?h[5]*CAP:Math.min(h[4]*(1+f),CAP);
+console.assert(score(HANDS[2],3)==8&&score(HANDS[2],2)==6&&score(HANDS[7],9)==CAP&&score(HANDS[10],0)==40,'score self-check');
+$('#hands').innerHTML=HANDS.map(h=>`<li><span class="k">${h[0]} <span class="zh">${h[1]}</span> <span class="py">${h[2]}</span></span><span class="v">${h[5]?h[5]+' × cap':h[4]+' fan'}</span><span class="d">${h[3]}</span></li>`).join('');
+$('#hand').innerHTML=HANDS.map((h,i)=>`<option value="${i}"${i==2?' selected':''}>${h[0]}</option>`).join('');
+function calc(){
+  const h=HANDS[$('#hand').value], f=Math.max(0,Math.min(20,parseInt($('#fl').value,10)||0)), s=score(h,f);
+  $('#sum').textContent=h[5]?`${h[5]} × cap = ${s} points`:
+    `${h[4]} × (1 + ${f}) = ${h[4]*(1+f)}${h[4]*(1+f)>CAP?`, capped at ${CAP}`:''} points`;
+}
+$('#hand').addEventListener('change',calc); $('#fl').addEventListener('input',calc); calc();
+
+/* glossary */
+$('#gloss').innerHTML=[
+  ['筒 / 条 / 万','tǒng / tiáo / wàn','Dots / Bamboo / Characters'],
+  ['东 南 西 北','dōng nán xī běi','East, South, West, North'],
+  ['中 发 白','zhōng fā bái','Red, Green, White dragons'],
+  ['花','huā','Flower: a bonus tile, and a scoring point'],
+  ['顺子','shùnzi','Run'],['刻子','kèzi','Triplet'],['对子','duìzi','Pair'],
+  ['庄家','zhuāngjiā','Dealer'],
+  ['上家 / 下家','shàngjiā / xiàjiā','Player on your left / right'],
+  ['碰','pèng','Pung: claim a tile to make a triplet'],
+  ['吃','chī','Chow: claim a tile to make a run'],
+  ['杠','gàng','Kong: four of a kind'],
+  ['听牌','tīngpái','Ready: one tile away from winning'],
+  ['敲','qiāo','Knock: declare you are ready'],
+  ['胡','hú','Win!'],
+  ['自摸','zìmō','Self-drawn win'],
+  ['点炮','diǎnpào','Throwing someone their winning tile'],
+  ['番','fān','Hand multiplier'],
+  ['勒子','lèzi','Payout cap for one hand'],
+  ['荒庄','huāngzhuāng','A hand nobody wins']
+].map(([z,p,e])=>`<li><span class="k zh">${z}</span><span class="py">${p}</span><span>${e}</span></li>`).join('');
+
+/* tiles + chapter dots */
+$$('[data-h]').forEach(el=>{el.classList.add('hand'); el.innerHTML=groups(el.dataset.h)});
+const plates=$$('.plate');
+$('.dots').innerHTML=plates.map((p,i)=>{p.id='p'+i; return `<a href="#p${i}" title="${p.dataset.n}" aria-label="${p.dataset.n}"${'gap' in p.dataset?' class="gap"':''}></a>`}).join('');
+const dots=$$('.dots a');
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting) dots.forEach(a=>a.toggleAttribute('data-on',a.hash=='#'+e.target.id));
+}),{rootMargin:'-50% 0px -50% 0px'});
+plates.forEach(p=>io.observe(p));
+
+/* widget clicks */
+document.addEventListener('click',e=>{
+  const o=e.target.closest('[data-o]');
+  if(o){
+    const q=o.closest('.q'), ok=o.dataset.o==q.dataset.a;
+    q.querySelectorAll('[data-o]').forEach(b=>b.removeAttribute('aria-pressed'));
+    o.setAttribute('aria-pressed','true');
+    q.dataset.ok=ok;
+    q.querySelector('.fb').textContent=ok?'Yes. '+q.dataset.why:'Not quite. Try another.';
+    return;
+  }
+  const c=e.target.closest('.cand');
+  if(c){
+    const r=c.closest('.ready'), t=c.dataset.t, g=r.querySelector('.hand .grp:last-child'), fb=r.querySelector('.fb');
+    r.querySelector('.t.in')?.remove();
+    if(t=='3B'||t=='6B'){
+      g.insertAdjacentHTML(t=='3B'?'afterbegin':'beforeend',tile(t,'in'));
+      fb.innerHTML=`<span class="zh">胡</span> Hú! ${tileName(t)} makes ${t=='3B'?'3, 4, 5':'4, 5, 6'}. The ${t=='3B'?6:3} would have worked too.`;
+    } else fb.textContent=`Not ${tileName(t)}. The 4 and 5 of Bamboo are waiting for a neighbour.`;
+    return;
+  }
+  const s=e.target.closest('[data-seat]');
+  if(s){
+    $$('[data-seat]').forEach(b=>b.setAttribute('aria-pressed',b==s));
+    $('#seatfb').textContent=s.dataset.seat=='l'
+      ?'From your left you may call anything: Chī, Pèng, Gàng or Hú.'
+      :'Pèng, Gàng or Hú, but no chow. Runs come only from your left.';
+  }
+});
+</script>
+</body>
+</html>

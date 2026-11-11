@@ -52,6 +52,7 @@ strong{font-weight:500;color:var(--ink)}
 @media(max-height:560px){.dots{display:none}}
 .home{position:fixed;right:14px;top:18px;z-index:5;writing-mode:vertical-rl;font:italic 400 15px/1 "Cormorant Garamond",serif;letter-spacing:.08em;color:#f6f3ec;text-decoration:none;mix-blend-mode:difference}
 .home:hover{text-decoration:underline}
+.count{display:none;position:fixed;right:14px;top:124px;z-index:5;writing-mode:vertical-rl;font:italic 400 15px/1 "Cormorant Garamond",serif;letter-spacing:.08em;color:#f6f3ec;mix-blend-mode:difference;pointer-events:none}
 
 /* tiles */
 .hand{display:flex;flex-wrap:wrap;gap:10px 16px}
@@ -115,19 +116,27 @@ button:focus-visible,a:focus-visible,summary:focus-visible,select:focus-visible,
 @media(hover:hover){.btn:hover{border-color:var(--ink)}.cand:hover{transform:translateY(-4px)}}
 
 @media(max-width:700px){
+  html{scroll-snap-type:none}
+  .dots{display:none}
+  .count{display:block}
+  .btn{min-height:44px}
   .plate{display:block}
   .plate>.glyph{display:block;position:static;font-size:200px;margin:-20px 0 0 -40px}
-  .body{padding:28px 40px 96px 20px}
-  .hero{display:flex}
+  .body{padding:28px 38px 88px 20px}
+  .hero{display:flex;padding-right:38px}
+  .hero>.glyph{position:absolute;margin:0;font-size:58vw}
   .rows.gl li{grid-template-columns:auto 1fr}
   .rows.gl li span:last-child{grid-column:1/-1}
 }
 @media(max-width:420px){.t{width:36px;height:54px;padding:3px}.t i{width:7px;height:7px}.t b{margin:0 2.5px;height:11px}.t em.big{font-size:21px}.t .frame{width:18px;height:32px}}
+@media(max-width:374px){.hand{zoom:.84}}
+@media(max-width:700px) and (max-height:700px){.hero .vt{display:none}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
 <a class="home" href="/">Whim Garden</a>
+<span class="count" aria-hidden="true"></span>
 <nav class="dots" aria-label="Chapters"></nav>
 <main>
 
@@ -474,7 +483,7 @@ const plates=$$('.plate');
 $('.dots').innerHTML=plates.map((p,i)=>{p.id='p'+i; return `<a href="#p${i}" title="${p.dataset.n}" aria-label="${p.dataset.n}"${'gap' in p.dataset?' class="gap"':''}></a>`}).join('');
 const dots=$$('.dots a');
 const io=new IntersectionObserver(es=>es.forEach(e=>{
-  if(e.isIntersecting) dots.forEach(a=>a.toggleAttribute('data-on',a.hash=='#'+e.target.id));
+  if(e.isIntersecting){dots.forEach(a=>a.toggleAttribute('data-on',a.hash=='#'+e.target.id)); $('.count').textContent=`${+e.target.id.slice(1)+1} / ${plates.length}`}
 }),{rootMargin:'-50% 0px -50% 0px'});
 plates.forEach(p=>io.observe(p));
 

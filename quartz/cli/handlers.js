@@ -469,9 +469,10 @@ export async function handleBuild(argv) {
       // strip baseDir prefix
       req.url = req.url?.slice(argv.baseDir.length)
 
-      const serve = async () => {
+      const serve = async (overrides = {}) => {
         const release = await buildMutex.acquire()
         await serveHandler(req, res, {
+          ...overrides,
           public: argv.output,
           directoryListing: false,
           headers: [
@@ -519,8 +520,10 @@ export async function handleBuild(argv) {
         // does /trailing/index.html exist? if so, serve it
         const indexFp = path.posix.join(fp, "index.html")
         if (fs.existsSync(path.posix.join(argv.output, indexFp))) {
-          req.url = fp
-          return serve()
+          // serve index.html explicitly: serve-handler skips the directory index
+          // when the folder name looks like it has an extension (e.g. "mit-9.13")
+          req.url = indexFp
+          return serve({ cleanUrls: false })
         }
 
         // does /trailing.html exist? if so, redirect to /trailing
@@ -533,12 +536,19 @@ export async function handleBuild(argv) {
         }
       } else {
         // /regular
-        // does /regular.html exist? if so, serve it
-        let base = fp
-        if (path.extname(base) === "") {
-          base += ".html"
+        // does /regular.html exist? if so, serve it (explicitly, for the same
+        // extension-lookalike reason as above)
+        const isFile = (fp) =>
+          fs
+            .statSync(path.posix.join(argv.output, decodeURIComponent(fp)), {
+              throwIfNoEntry: false,
+            })
+            ?.isFile()
+        if (isFile(fp + ".html")) {
+          req.url = fp + ".html"
+          return serve({ cleanUrls: false })
         }
-        if (fs.existsSync(path.posix.join(argv.output, base))) {
+        if (isFile(fp)) {
           req.url = fp
           return serve()
         }

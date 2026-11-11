@@ -50,6 +50,8 @@ strong{font-weight:500;color:var(--ink)}
 .dots a::after{content:"";width:5px;height:5px;border-radius:3px;background:#f6f3ec;transition:height 200ms ease-out}
 .dots a[data-on]::after{height:18px}
 @media(max-height:560px){.dots{display:none}}
+.home{position:fixed;right:14px;top:18px;z-index:5;writing-mode:vertical-rl;font:italic 400 15px/1 "Cormorant Garamond",serif;letter-spacing:.08em;color:#f6f3ec;text-decoration:none;mix-blend-mode:difference}
+.home:hover{text-decoration:underline}
 
 /* tiles */
 .hand{display:flex;flex-wrap:wrap;gap:10px 16px}
@@ -125,6 +127,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,select:focus-visible,
 </style>
 </head>
 <body>
+<a class="home" href="/">Whim Garden</a>
 <nav class="dots" aria-label="Chapters"></nav>
 <main>
 

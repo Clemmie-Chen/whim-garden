@@ -9,9 +9,10 @@ tags:
 > 起点很简单：想让外国朋友看完一个网页，就能看懂麻将的核心规则，然后直接上桌。
 > 整个页面只讲一句话：**四组一对，即可胡牌**。其余规则都是从这句话长出来的。
 >
-> 👉 **[打开页面 · Shanghai Mahjong](/static/shanghai-mahjong/)**（独立页面，建议全屏看）
+> 👉 <a href="/static/shanghai-mahjong/" data-router-ignore data-no-popover="true"><strong>打开页面 · Shanghai Mahjong</strong></a>（独立页面，点开就是完整版）
 
-<iframe src="/static/shanghai-mahjong/" title="Shanghai Mahjong" loading="lazy" style="width:100%;height:80vh;border:1px solid #16130f33;"></iframe>
+<style>@media (max-width: 800px) { .mj-preview { display: none; } }</style>
+<iframe class="mj-preview" src="/static/shanghai-mahjong/" title="Shanghai Mahjong" loading="lazy" style="width:100%;height:80vh;border:1px solid #16130f33;"></iframe>
 
 ---
 

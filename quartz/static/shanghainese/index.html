@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>上海言话</title>
+<meta name="description" content="上海话注音：输入普通话文本，输出上海言话注音。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Charis+SIL:wght@700&family=Noto+Serif+SC:wght@400;900&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1c2900;--leaf:#253500;--btn:#344c00;--zh:"Noto Serif SC","Songti SC",serif;--ipa:"Charis SIL","Times New Roman",serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+html{--peek:140px}
+@media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{font:900 16px/normal var(--zh);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+p,h1,h2{margin:0;font:inherit}
+.ipa{font-family:var(--ipa);font-weight:700}
+button{font:inherit;line-height:22px;cursor:pointer;border:0;color:#fff}
+
+.view{position:relative;overflow:hidden}
+/* chevron: Figma "Line 1" export, anchored to the left edge and the vertical middle of the frame */
+.chev{position:absolute;left:0;width:0;height:0;pointer-events:none;transform-origin:0 0}
+.chev img{position:absolute;display:block;max-width:none}
+
+/* Home (1:47) */
+#home{background:linear-gradient(-59deg,#ecffbe 0%,#a1b96a 100%);color:var(--leaf);--big:clamp(44px,7.8vw,100px)}
+#home .chev{top:calc(50% - 65px)}
+#home .chev img{left:-906.89px;top:-1656.89px;width:1881.89px;height:3313.78px}
+.home-in{position:relative;width:min(1080px,calc(100% - 32px));margin-left:clamp(16px,4.7vw,60px);min-height:calc(100svh - var(--peek));padding:clamp(56px,16vh,140px) 0 40px;display:flex;flex-direction:column;justify-content:space-between;gap:48px}
+.home-in h1{font-size:var(--big);white-space:nowrap}
+.word{display:flex;gap:20px;width:fit-content;margin-left:auto;font-size:var(--big)}
+.word span{display:flex;flex-direction:column;align-items:center}
+.word i{font-style:normal;line-height:1.15}
+.word b{font-weight:900;line-height:1.4}
+.go-row{display:flex;justify-content:flex-end;padding:0 20px;margin-top:10px}
+.go{padding:14px 40px;border-radius:16px;font-size:26px;line-height:36px;background:rgba(138,202,0,.8);box-shadow:inset 0 0 30px rgba(241,252,217,.8);transition:transform 160ms ease-out}
+.go:active{transform:scale(.96)}
+
+/* Convert (1:26) */
+/* the card top peeks into the first screen: tool is visible without clicking */
+#convert{background:#2a4200;display:flex;flex-direction:column;align-items:center;gap:40px;padding:48px 16px 56px}
+#convert .chev{top:calc(50% - 135px)}
+#convert .chev img{left:-1006px;top:-1840.99px;width:2090.99px;height:3681.98px}
+.card{position:relative;width:520px;max-width:100%;padding:20px;border-radius:20px;background:rgba(255,255,255,.87);-webkit-backdrop-filter:blur(150px);backdrop-filter:blur(150px);display:flex;flex-direction:column;gap:15px}
+.blk{display:flex;flex-direction:column;gap:10px}
+.card h2{font-size:30px;line-height:42px;height:42px}
+.box{width:100%;border-radius:20px;padding:15px 20px;color:var(--ink)}
+textarea.box{display:block;height:139px;resize:none;border:0;outline:0;background:rgba(252,255,245,.85);font:900 16px/normal var(--zh)}
+textarea.box:focus-visible{box-shadow:0 0 0 2px var(--btn)}
+textarea.box::placeholder{color:color-mix(in srgb,var(--ink) 45%,transparent)}
+.out{min-height:286px;background:#fafdf3;display:flex;flex-direction:column;gap:10px;overflow-wrap:anywhere}
+.out p{line-height:18px}
+.out p+p{line-height:22px}
+.out.demo{color:color-mix(in srgb,var(--ink) 62%,transparent)}
+.row{display:flex;justify-content:flex-end;padding:0 10px}
+.btn{height:34px;background:var(--btn);border-radius:10px;padding:6px 20px;font-size:16px;transition:transform 160ms ease-out}
+.btn.tight{padding-right:8px} /* "转！" ends in a full-width ！, Figma trims the right pad */
+.btn:active{transform:scale(.96)}
+.btn:focus-visible,.go:focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+.more{position:relative;color:#fafdf3;opacity:.7;font-size:15px;text-decoration:none;transition:opacity 160ms ease-out}
+.more:hover,.more:focus-visible{opacity:1}
+
+/* About: secondary long-form reading, placeholder until the docs arrive */
+#about{background:#fafdf3;padding:96px 16px 120px}
+.article{max-width:640px;margin:0 auto;font:400 17px/1.9 var(--zh)}
+.article h2{font:900 30px/1.4 var(--zh);margin:0 0 8px}
+.article h3{font:900 20px/1.5 var(--zh);margin:48px 0 12px}
+.article .meta{font-size:14px;opacity:.7;margin-bottom:40px}
+.article p+p{margin-top:1em}
+.article .ipa{font-weight:400}
+.article a{color:inherit;text-underline-offset:3px}
+.article ul{margin:1em 0;padding-left:1.4em}
+.article ul ul{margin:.25em 0}
+.article .note{font-size:15px;line-height:1.8}
+/* tables break out of the 640px text column so the 8-column 声母 table fits on desktop */
+.tbl{overflow-x:auto;margin:32px 0 8px;width:max-content;min-width:100%;max-width:calc(100vw - 32px);position:relative;left:50%;transform:translateX(-50%);-webkit-overflow-scrolling:touch}
+.tbl table{margin:0 auto;border-collapse:collapse;font-size:15px;line-height:1.5;white-space:nowrap}
+.tbl caption{text-align:left;font:900 20px/1.5 var(--zh);padding-bottom:12px}
+.tbl th,.tbl td{padding:8px 12px;border-bottom:1px solid color-mix(in srgb,var(--ink) 15%,transparent);text-align:left;vertical-align:top}
+.tbl th{font-weight:900;font-size:13px}
+.tbl td b{font-weight:700}
+.tbl .x{color:color-mix(in srgb,var(--ink) 62%,transparent)}
+
+@media(max-width:700px){
+  html{--peek:96px}
+  .chev{transform:scale(.5)}
+  .home-in{gap:32px}
+  .word{gap:10px}
+  .go-row{padding:0}
+  #convert{padding:40px 16px 40px}
+  #about{padding:64px 16px 80px}
+  .card{padding:16px}
+  .card h2{font-size:26px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main>
+<section id="home" class="view">
+  <div class="chev"><img src="chevron-home.svg" alt=""></div>
+  <div class="home-in">
+    <h1>上海话 ?</h1>
+    <div>
+      <p class="word" lang="zh" aria-label="上海言话">
+        <span><i class="ipa">zaŋ</i><b>上</b></span>
+        <span><i class="ipa">he</i><b>海</b></span>
+        <span><i class="ipa">ɦe</i><b>言</b></span>
+        <span><i class="ipa">wu</i><b>话</b></span>
+      </p>
+      <div class="go-row"><button class="go" id="go">走</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="convert" class="view">
+  <div class="chev"><img src="chevron-convert.svg" alt=""></div>
+  <div class="card">
+    <section class="blk">
+      <h2><label for="src">输入文本</label></h2>
+      <textarea class="box" id="src" placeholder="这是普通话&#10;这是第二行"></textarea>
+      <div class="row"><button class="btn tight" id="run">转！</button></div>
+    </section>
+    <section class="blk">
+      <h2>上海言话拼音</h2>
+      <div class="box out" id="out" aria-live="polite"></div>
+      <div class="row"><button class="btn" id="copy">拷走</button></div>
+    </section>
+  </div>
+  <a class="more" href="#about">关于这个项目和注音规则 ↓</a>
+</section>
+
+<section id="about" aria-labelledby="about-h">
+  <article class="article">
+    <h2 id="about-h">音形相生沪拼表</h2>
+    <p class="meta">编订原则 · 声母 · 韵母</p>
+    <!-- content: Feishu doc NfVkdKqoBoKGNTxZA3Scj5JynVh (音形相生沪拼表-说明书) -->
+    <h3>编订原则</h3>
+    <p>音形相生沪拼表（下文称「本方案」）的基本体系引用自<a href="https://github.com/NGLI/rime-wugniu_zaonhe/wiki/%E9%9F%B3%E7%B3%BB%E5%8F%8A%E6%8B%BC%E9%9F%B3%E6%96%B9%E6%A1%88">吴语学堂版本的吴语拼音</a>（基于上海音系（中派），下文称「吴拼」），并朝新派上海话的方向做了简化改造。</p>
+    <p>考虑到歌词的注音对象为拼音使用者和英语使用者，为了让 TA 们更快地理解、上手、跟唱，因此在标音过程中，对原版吴拼做了一些改动——对于 IPA 和拼音的冲突，选择了大家更熟悉的拼音标法。</p>
+    <p>除拼写体系的修改之外，单字的注音也更多的基于实际的发音。如有词典未收录的发音（如：普通话词语文读），则以实际发音为准进行注音。如，咖啡的「咖」，实际读音为 <span class="ipa">/kʰa/</span>(IPA)，吴语小词典只收录了咖喱的「咖 <span class="ipa">/kɑ/</span>」，我们则按 <span class="ipa">/ka/</span> 来标记。</p>
+    <p>另，上海话本身区分单字调/连读变调，但考虑到连读变调及歌曲旋律对于声调的影响，歌词注音不标注声调。</p>
+
+    <h3>沪拼</h3>
+    <ul>
+      <li>表中每格第一个拼写为歌词注音的拼写方式；方括号中是 IPA 体系下的宽式上海话注音；最后是一个例字。</li>
+      <li>[方括号]中为 IPA 版标音，/双斜杠/ 中为特定方案中的标音方式，如普通话拼音，或吴拼。</li>
+    </ul>
+    <div class="tbl"><table>
+<caption>声母</caption>
+<thead><tr><th></th><th>清不送气塞音 / 塞擦音</th><th>清送气塞音 / 塞擦音</th><th>浊塞音 / 塞擦音</th><th>鼻音 / 边音（浊流）</th><th>鼻音 / 边音（紧喉）</th><th>清擦音</th><th>浊擦音</th></tr></thead>
+<tbody>
+<tr><th>双唇/唇齿</th><td><b class="ipa">b</b> <span class="ipa x">[p]</span> 北</td><td><b class="ipa">p</b> <span class="ipa x">[pʰ]</span> 潑</td><td><b class="ipa">ɓ</b> <span class="ipa x">[b]</span> 蔔</td><td><b class="ipa">m</b> <span class="ipa x">[m]</span> 摸</td><td><b class="ipa">ʔm</b> <span class="ipa x">[ʔm]</span> 咪</td><td><b class="ipa">f</b> <span class="ipa x">[f]</span> 夫</td><td><b class="ipa">v</b> <span class="ipa x">[v]</span> 扶</td></tr>
+<tr><th>齿龈</th><td><b class="ipa">d</b> <span class="ipa x">[t]</span> 得</td><td><b class="ipa">t</b> <span class="ipa x">[tʰ]</span> 脫</td><td><b class="ipa">ɖ</b> <span class="ipa x">[d]</span> 奪</td><td><b class="ipa">n</b> <span class="ipa x">[n]</span> 諾</td><td><b class="ipa">ʔn</b> <span class="ipa x">[ʔn]</span> 拿</td><td></td><td></td></tr>
+<tr><th></th><td></td><td></td><td></td><td><b class="ipa">l</b> <span class="ipa x">[l]</span> 勒</td><td><b class="ipa">ʔl</b> <span class="ipa x">[ʔl]</span> 拎</td><td></td><td></td></tr>
+<tr><th></th><td><b class="ipa">dz</b> <span class="ipa x">[ts]</span> 資</td><td><b class="ipa">c</b> <span class="ipa x">[tsʰ]</span> 次</td><td></td><td></td><td></td><td><b class="ipa">s</b> <span class="ipa x">[s]</span> 絲</td><td><b class="ipa">z</b> <span class="ipa x">[z]</span> 市</td></tr>
+<tr><th>尖音</th><td><b class="ipa">dz&#x27;</b> 精</td><td><b class="ipa">ts</b> 秋</td><td></td><td></td><td></td><td><b class="ipa">s</b> 尖音-需</td><td><b class="ipa">z</b> 尖音-徐</td></tr>
+<tr><th>龈腭</th><td><b class="ipa">j</b> <span class="ipa x">[tɕ]</span> 几</td><td><b class="ipa">q</b> <span class="ipa x">[tɕʰ]</span> 欺</td><td><b class="ipa">ʝ</b> <span class="ipa x">[dʑ]</span> 其</td><td><b class="ipa">ȵ</b> <span class="ipa x">[ȵ]</span> 泥疑日</td><td></td><td><b class="ipa">x</b> <span class="ipa x">[ɕ]</span> 想</td><td><b class="ipa">ʑ</b> <span class="ipa x">[ʑ]</span> 前</td></tr>
+<tr><th>软腭</th><td><b class="ipa">g</b> <span class="ipa x">[k]</span> 葛</td><td><b class="ipa">k</b> <span class="ipa x">[kʰ]</span> 克</td><td><b class="ipa">ɠ</b> <span class="ipa x">[ɡ]</span> 個</td><td><b class="ipa">ng</b> <span class="ipa x">[ŋ]</span> 魚</td><td><b class="ipa">nk</b> <span class="ipa x">[ʔŋ]</span> 捱</td><td></td><td></td></tr>
+<tr><th>声门</th><td><b class="ipa">∅</b> <span class="ipa x">[ ]</span> 阿</td><td></td><td></td><td></td><td></td><td><b class="ipa">h</b> <span class="ipa x">[h]</span> 黑</td><td><b class="ipa">ɦ</b> <span class="ipa x">[ɦ]</span> 合</td></tr>
+</tbody></table></div>
+    <ul class="note">
+      <li>零声母调整：
+        <ul>
+          <li>吴拼空置了零声母，歌词版本加上前置零声母以符合拼音使用者的习惯。如 乌 <span class="ipa">[u] /u/ → /wu/</span>；衣 <span class="ipa">[i] /i/ → /yi/</span>；淤 <span class="ipa">/ü/ → /yü/</span></li>
+          <li>同时，对声门浊擦音也保留其零声母的使用，如 河 <span class="ipa">[ɦu] → /wu/</span>；搿 <span class="ipa">[ɦəʔ] → /ɦəʔ/</span>。不区分零声母和声门浊擦音的音位对立。</li>
+        </ul></li>
+      <li>龈颚擦音及塞擦音 <span class="ipa">/j/ /q/ /x/</span> 沿用普通话拼音方案：
+        <ul>
+          <li>为防止拼音使用者混淆普通话的「几 <span class="ipa">[tɕ] /j/</span>」和吴拼的「几 <span class="ipa">[tɕ] /ci/</span>」，本方案把「几」按拼音习惯标为 <span class="ipa">/ji/</span>，对应的浊「其」标为 <span class="ipa">/ʝi/</span>。如 几 <span class="ipa">/ci/ → /ji/</span>；其 <span class="ipa">/ji/ → /ʝi/</span></li>
+          <li>为防止拼音使用者混淆普通话方案的「吃 <span class="ipa">[ʈʂi] /chi/</span>」和上海话吴拼方案的「气 <span class="ipa">[ʈɕi] /chi/</span>」，本方案把「气」按拼音习惯标为 <span class="ipa">/qi/</span>。如 气 <span class="ipa">[ʈɕi] → /qi/</span></li>
+          <li>为防止普通话方案的「诗 <span class="ipa">/shi/</span>」和吴拼方案的「希 <span class="ipa">[ɕ] /sh/</span>」混淆，歌词版吴拼把「希」按拼音习惯标为 <span class="ipa">/x/</span>。如 想 <span class="ipa">[ɕ] → /xiaŋ/</span></li>
+        </ul></li>
+      <li>沿用普通话拼音方案，送气与不送气的塞音使用不同字母表示，浊音使用变体字母。
+        <ul>
+          <li><span class="ipa">[p] [pʰ] [b] → /b/ /p/ /ɓ/</span>，如 北、泼、葡</li>
+          <li><span class="ipa">[t] [tʰ] [d] → /d/ /t/ /ɖ/</span>，如 得、脱、夺</li>
+          <li><span class="ipa">[k] [kʰ] [g] → /g/ /k/ /ɠ/</span>，如 康、刚、戆</li>
+        </ul></li>
+      <li>遵循普通话习惯，不区分龈腭鼻音的清浊 <span class="ipa">/ʔȵ/</span>日 - <span class="ipa">/ȵ/</span>粘</li>
+    </ul>
+    <div class="tbl"><table>
+<caption>韵母</caption>
+<thead><tr><th>开口</th><th>齐齿</th><th>合口</th><th>撮口</th></tr></thead>
+<tbody>
+<tr><td><b class="ipa">y</b> <span class="ipa x">[ɿ]</span> 之</td><td><b class="ipa">i</b> <span class="ipa x">[i]</span> 衣</td><td><b class="ipa">u</b> <span class="ipa x">[u]</span> 烏</td><td><b class="ipa">ü</b> <span class="ipa x">[y]</span> 淤</td></tr>
+<tr><td><b class="ipa">a</b> <span class="ipa x">[ᴀ]</span> 阿</td><td><b class="ipa">ia</b> <span class="ipa x">[iᴀ]</span> 鴉</td><td><b class="ipa">ua</b> <span class="ipa x">[uᴀ]</span> 怪</td><td></td></tr>
+<tr><td><b class="ipa">ʊ</b> <span class="ipa x">[o]</span> 蛇</td><td></td><td></td><td></td></tr>
+<tr><td><b class="ipa">ɔ</b> <span class="ipa x">[ɔ]</span> 好</td><td><b class="ipa">iɔ</b> <span class="ipa x">[iɔ]</span> 要</td><td></td><td></td></tr>
+<tr><td><b class="ipa">eu</b> <span class="ipa x">[ɤ]</span> 歐</td><td><b class="ipa">ieu</b> <span class="ipa x">[iɤ]</span> 優</td><td></td><td></td></tr>
+<tr><td><b class="ipa">e</b> <span class="ipa x">[ᴇ]</span> 哀</td><td><b class="ipa">ie</b> <span class="ipa x">[iᴇ]</span> 廿</td><td><b class="ipa">ue</b> <span class="ipa x">[uᴇ]</span> 彎</td><td></td></tr>
+<tr><td><b class="ipa">ei</b> <span class="ipa x">[ei]</span> 会</td><td></td><td></td><td></td></tr>
+<tr><td><b class="ipa">ø</b> <span class="ipa x">[ø]</span> 安</td><td></td><td><b class="ipa">uø</b> <span class="ipa x">[uø]</span> 碗</td><td></td></tr>
+<tr><td><b class="ipa">aŋ</b> <span class="ipa x">[ã]</span> 冷</td><td><b class="ipa">iaŋ</b> <span class="ipa x">[iã]</span> 央</td><td><b class="ipa">uaŋ</b> <span class="ipa x">[uã]</span> 橫</td><td></td></tr>
+<tr><td><b class="ipa">aon</b> <span class="ipa x">[ɑ̃]</span> 項</td><td><b class="ipa">iaon</b> <span class="ipa x">[iɑ̃]</span> 旺白</td><td><b class="ipa">uaon</b> <span class="ipa x">[uɑ̃]</span> 汪</td><td></td></tr>
+<tr><td><b class="ipa">ɘn</b> <span class="ipa x">[ən]</span> 恩</td><td><b class="ipa">in</b> <span class="ipa x">[in]</span> 英</td><td><b class="ipa">uən</b> <span class="ipa x">[uən]</span> 溫</td><td><b class="ipa">iun</b> <span class="ipa x">[yn]</span> 允</td></tr>
+<tr><td><b class="ipa">oŋ</b> <span class="ipa x">[oŋ]</span> 空 翁</td><td><b class="ipa">ioŋ</b> <span class="ipa x">[ioŋ]</span> 永</td><td></td><td></td></tr>
+<tr><td><b class="ipa">aʔ</b> <span class="ipa x">[ᴀʔ]</span> 壓</td><td><b class="ipa">iaʔ</b> <span class="ipa x">[iᴀʔ]</span> 約</td><td><b class="ipa">uaʔ</b> <span class="ipa x">[uᴀʔ]</span> 挖</td><td></td></tr>
+<tr><td><b class="ipa">oʔ</b> <span class="ipa x">[oʔ]</span> 谷</td><td><b class="ipa">ioʔ</b> <span class="ipa x">[ioʔ]</span> 肉</td><td></td><td></td></tr>
+<tr><td><b class="ipa">əʔ</b> <span class="ipa x">[əʔ]</span> 了</td><td><b class="ipa">iʔ</b> <span class="ipa x">[iɪʔ]</span> 一</td><td><b class="ipa">ueʔ</b> <span class="ipa x">[uəʔ]</span> 骨</td><td><b class="ipa">iuʔ</b> <span class="ipa x">[yɪʔ]</span> 血</td></tr>
+<tr><td><b class="ipa">er</b> <span class="ipa x">[əl]</span> 而</td><td></td><td></td><td></td></tr>
+<tr><td><b class="ipa">m</b> <span class="ipa x">[m̩]</span> 嘸</td><td></td><td></td><td></td></tr>
+<tr><td><b class="ipa">n</b> <span class="ipa x">[n̩]</span> 嗯</td><td></td><td></td><td></td></tr>
+<tr><td><b class="ipa">nɡ</b> <span class="ipa x">[ŋ̍]</span> 五</td><td></td><td></td><td></td></tr>
+</tbody></table></div>
+    <ul class="note">
+      <li>歌词版吴拼区分了 <span class="ipa">[e] - [ə]</span> 对立。如 来了 <span class="ipa">/le leq/ → /le ləq/</span></li>
+      <li>为防止拼音使用者混淆 <span class="ipa">/an/ &amp; /ang/、/ian/ &amp; /iang/、/uan/ &amp; /uang/</span>：
+        <ul>
+          <li>将 <span class="ipa">[ã]</span> 标为 <span class="ipa">/aŋ/</span>，如「冷」<span class="ipa">[lã] → /laŋ/</span></li>
+          <li>将 <span class="ipa">[iã]</span> 标为 <span class="ipa">/iaŋ/</span>，如「央」<span class="ipa">[iã] → /iaŋ/</span></li>
+          <li>将 <span class="ipa">[uã]</span> 标为 <span class="ipa">/uaŋ/</span>，如「横」<span class="ipa">[uã] → /uaŋ/</span></li>
+        </ul></li>
+    </ul>
+  </article>
+</section>
+</main>
+
+<script>
+// TODO(backend): stub. Replace convert() with the real API call once the backend is decided,
+// e.g. `return (await fetch(API, {method:"POST", body:text})).json()` returning [{rom, text}] per line.
+const STUB = {上:"zaŋ",海:"he",言:"ɦe",话:"ɦu",这:"ɦə",是:"zy",普:"pu",通:"toŋ",第:"di",二:"ȵi",行:"ɦaŋ",我:"ŋu",侬:"noŋ",好:"hɔ",阿:"ɐʔ",拉:"la"};
+async function convert(text){
+  return text.split("\n").filter(l=>l.trim()).map(l=>({
+    rom:[...l].filter(c=>/\p{Script=Han}/u.test(c)).map(c=>STUB[c]||"·").join(" "),
+    text:l
+  }));
+}
+console.assert(convert("上海言话").then(r=>r[0].rom==="zaŋ he ɦe ɦu"));
+
+const $=id=>document.getElementById(id);
+$("go").onclick=()=>{$("convert").scrollIntoView();$("src").focus({preventScroll:true})};
+
+// empty input shows the placeholder converted, greyed, so the tool explains itself
+let lines=[],seq=0,timer;
+async function run(){
+  const v=$("src").value,demo=!v.trim(),my=++seq;
+  const res=await convert(demo?$("src").placeholder:v);
+  if(my!==seq)return; // a newer run started while this one awaited
+  lines=demo?[]:res;
+  $("out").classList.toggle("demo",demo);
+  $("out").replaceChildren(...res.map(({rom,text})=>{
+    const d=document.createElement("div"),r=document.createElement("p"),t=document.createElement("p");
+    r.className="ipa";r.textContent=rom;t.textContent=text;d.append(r,t);return d;
+  }));
+}
+$("run").onclick=run;
+$("src").oninput=()=>{clearTimeout(timer);timer=setTimeout(run,250)};
+run();
+$("src").onkeydown=e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))run()};
+$("copy").onclick=async e=>{
+  if(!lines.length)return;
+  try{await navigator.clipboard.writeText(lines.map(l=>l.rom+"\n"+l.text).join("\n\n"));e.target.textContent="拷好了"}
+  catch{e.target.textContent="拷勿脱"}
+  setTimeout(()=>e.target.textContent="拷走",1200);
+};
+</script>
+</body>
+</html>

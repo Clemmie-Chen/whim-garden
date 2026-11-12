@@ -249,6 +249,8 @@ export const HomeFrame: PageFrame = {
 .note-body article h2 { font-size: 21px; letter-spacing: -0.01em; margin: 2.2em 0 0.5em; }
 .note-body article h3 { font-size: 17px; margin: 1.6em 0 0.4em; }
 .note-body article p { margin: 0.6em 0; }
+/* links as in the prototype: colour and a faint underline, not bold */
+.note-body article a:is(.internal, .external) { font-weight: inherit; background: none; padding: 0; border-radius: 0; border-bottom: 1px solid color-mix(in srgb, var(--secondary) 30%, transparent); }
 .note-body article img { display: block; max-width: 100%; height: auto; border: 1px solid var(--lightgray); border-radius: 6px; cursor: zoom-in; }
 .note-body article a > img { cursor: pointer; }
 .note-body article table { border-collapse: collapse; font-size: 14px; }
@@ -269,6 +271,12 @@ export const HomeFrame: PageFrame = {
 @media (max-width: 800px) {
   .chron .about { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .note-toc { display: none; }
+  .chron .deck { font-size: 15px; line-height: 1.6; }
+  .note-body { padding-top: 6px; }
+  .note-body article { font-size: 15.5px; line-height: 1.8; }
+  .note-body article h2 { font-size: 18px; font-weight: 500; margin-top: 2em; }
+  .note-body article h3 { font-size: 16px; font-weight: 500; }
+  .chron .pn strong { font-size: 15px; font-weight: 500; }
   .chron .related { margin-left: 0; }
   .chron .pn { grid-template-columns: minmax(0, 1fr); }
   .chron .pn > * + * { border-left: 0; padding-left: 0; }

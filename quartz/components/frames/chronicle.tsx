@@ -246,7 +246,8 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .chron .label { font-family: var(--mf); font-size: 11px; letter-spacing: 0.08em; color: var(--gray); text-transform: uppercase; }
 .chron a.entry { display: block; padding: 16px 0 18px; border-bottom: 1px solid var(--lightgray); color: inherit; background: none; font-weight: inherit; border-radius: 0; }
 .chron a.entry:last-child { border-bottom: 0; }
-.chron .entry .k { display: flex; align-items: center; gap: 8px; font-family: var(--mf); font-size: 11px; line-height: 1.6; color: var(--gray); }
+.chron .entry .k { display: flex; align-items: flex-start; gap: 8px; font-family: var(--mf); font-size: 11px; line-height: 1.6; color: var(--gray); }
+.chron .entry .k .dot { margin-top: 5px; } /* sits on the first line when the meta wraps */
 .chron .entry h3 { margin: 4px 0; font-family: var(--hf); font-weight: 600; font-size: 19px; line-height: 1.3; letter-spacing: -0.01em; color: var(--dark); transition: color 150ms ease-out; }
 .chron .entry:hover h3 { color: var(--secondary); }
 /* entries rise in one after another; the delay is capped so long lists don't wait */
@@ -261,7 +262,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .home-nav .search > .search-button svg { width: 14px; min-width: 14px; margin: 0 8px 0 10px; }
 .home-nav .search > .search-button p { flex: 1; margin: 0; }
 .home-nav .search > .search-button::after { content: "⌘K"; font-family: var(--mf); font-size: 11px; color: var(--gray); border: 1px solid var(--lightgray); border-radius: 4px; padding: 0 4px; line-height: 18px; }
-.chron .entry p { margin: 2px 0 0; color: var(--darkgray); font-size: 15px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.chron .entry p { margin: 4px 0 0; color: var(--quiet); font-size: 14px; font-weight: 400; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .chron .seclinks { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 14px 0; font-family: var(--mf); font-size: 12px; }
 .chron .seclinks a { display: inline-flex; align-items: center; gap: 6px; color: var(--darkgray); background: none; padding: 0; font-weight: inherit; transition: color 150ms ease-out; }
 .chron .seclinks a:hover { color: var(--secondary); }
@@ -277,6 +278,19 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
   .chron .day { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .chron .date { position: relative; padding-bottom: 0; }
   .chron .date b { display: inline; font-size: 16px; margin-right: 8px; }
+
+  /* phones: one weight lighter and a size smaller everywhere, with more air between entries */
+  .home-nav { padding: 14px 0 6px; row-gap: 10px; }
+  .home-nav .page-title { font-size: 16px; font-weight: 600; }
+  .chron .top { padding: 1.6rem 0 1.4rem; }
+  .chron h1 { font-size: 22px; font-weight: 500; line-height: 1.3; letter-spacing: -0.015em; margin-bottom: 12px; }
+  .chron .holes { line-height: 1.7; }
+  .chron .chips { gap: 8px 6px; }
+  .chron .date { padding-top: 18px; }
+  .chron .date b { font-size: 14px; font-weight: 500; }
+  .chron a.entry { padding: 14px 0 20px; }
+  .chron .entry h3 { font-size: 16.5px; font-weight: 500; line-height: 1.45; letter-spacing: 0; margin: 6px 0 2px; }
+  .chron .entry p { font-size: 13.5px; }
 }
 @media (prefers-reduced-motion: reduce) { .chron * { transition: none !important; animation: none !important; } }
 `

@@ -131,6 +131,7 @@ export function Days({
                   class={`entry internal sec-${i % 6}`}
                   data-sec={String(i)}
                   href={resolveRelative(here, f.slug!)}
+                  style={`--i:${list.indexOf(f)}`}
                 >
                   <span class="k">
                     <i class="dot" />
@@ -248,6 +249,18 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .chron .entry .k { display: flex; align-items: center; gap: 8px; font-family: var(--mf); font-size: 11px; line-height: 1.6; color: var(--gray); }
 .chron .entry h3 { margin: 4px 0; font-family: var(--hf); font-weight: 600; font-size: 19px; line-height: 1.3; letter-spacing: -0.01em; color: var(--dark); transition: color 150ms ease-out; }
 .chron .entry:hover h3 { color: var(--secondary); }
+/* entries rise in one after another; the delay is capped so long lists don't wait */
+.chron a.entry { animation: chron-rise 240ms cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: min(calc(var(--i, 0) * 24ms), 300ms); }
+@keyframes chron-rise { from { opacity: 0; transform: translateY(6px); } }
+
+/* search box from the prototype: white field, mono placeholder, shortcut hint */
+.home-nav { --surface: #fff; }
+:root[saved-theme="dark"] .home-nav { --surface: #1d1d20; }
+.home-nav .search > .search-button { height: 32px; padding: 0 8px 0 0; border-radius: 6px; background: var(--surface); font-family: var(--mf); font-size: 13px; transition: border-color 150ms ease-out; }
+.home-nav .search > .search-button:hover { border-color: var(--gray); }
+.home-nav .search > .search-button svg { width: 14px; min-width: 14px; margin: 0 8px 0 10px; }
+.home-nav .search > .search-button p { flex: 1; margin: 0; }
+.home-nav .search > .search-button::after { content: "⌘K"; font-family: var(--mf); font-size: 11px; color: var(--gray); border: 1px solid var(--lightgray); border-radius: 4px; padding: 0 4px; line-height: 18px; }
 .chron .entry p { margin: 2px 0 0; color: var(--darkgray); font-size: 15px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .chron .seclinks { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 14px 0; font-family: var(--mf); font-size: 12px; }
 .chron .seclinks a { display: inline-flex; align-items: center; gap: 6px; color: var(--darkgray); background: none; padding: 0; font-weight: inherit; transition: color 150ms ease-out; }
@@ -260,9 +273,10 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
   /* the theme sizes the footer to 100dvw - 3rem plus its own padding, which ignores the padding above */
   html .page > #quartz-body footer { min-width: 0; max-width: none; padding: 0; }
   .home-nav { flex-wrap: wrap; }
+  .home-nav .search > .search-button::after { display: none; }
   .chron .day { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .chron .date { position: relative; padding-bottom: 0; }
   .chron .date b { display: inline; font-size: 16px; margin-right: 8px; }
 }
-@media (prefers-reduced-motion: reduce) { .chron * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .chron * { transition: none !important; animation: none !important; } }
 `

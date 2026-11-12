@@ -214,8 +214,10 @@ document.addEventListener("nav", () => {
 componentRegistry.register("chronicle-scripts", () => ChronicleScripts, "frames/chronicle")
 
 export const sharedCss = `
-/* side margin grows smoothly with the window (20px on phones, 48px from ~800px), content stays 796px max */
-#quartz-body { display: block; max-width: 892px; margin: 0 auto; padding: 0 clamp(20px, 6vw, 48px); }
+/* side margin grows smoothly with the window (20px on phones, 48px from ~800px).
+   The column is only as wide as the text it holds (date 112 + gap 28 + ~30 title characters),
+   so rules and the nav end where the text ends instead of running past it. */
+#quartz-body { --gutter: clamp(20px, 6vw, 48px); display: block; max-width: 712px; box-sizing: content-box; margin: 0 auto; padding: 0 var(--gutter); }
 .home-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 0; }
 .home-nav .page-title { margin: 0; font-size: 1.15rem; }
 .home-nav > .page-title { display: block; } /* the theme hides it on phones; here it is the only way home */
@@ -279,6 +281,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
   html .page > #quartz-body footer { min-width: 0; max-width: none; padding: 0; }
   .home-nav { flex-wrap: wrap; }
   .home-nav .search > .search-button::after { display: none; }
+  #quartz-body { max-width: 500px; } /* single column: about 36 characters wide */
   .chron .day { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .chron .date { position: relative; padding-bottom: 0; }
   .chron .date b { display: inline; font-size: 16px; margin-right: 8px; }

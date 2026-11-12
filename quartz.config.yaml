@@ -32,10 +32,11 @@ configuration:
         gray: "#8f8b83"
         darkgray: "#55524c"
         dark: "#3b3935"
-        secondary: "#3e5d73"
-        tertiary: "#84a59d"
-        highlight: rgba(143, 159, 169, 0.15)
-        textHighlight: "#fff23688"
+        # accent: warm umber to sit with the paper palette (was steel blue #3e5d73); 4.95:1 on the page
+        secondary: "#8a6248"
+        tertiary: "#a8836a"
+        highlight: rgba(150, 120, 90, 0.12)
+        textHighlight: "#f2d58a88"
       # softened: no near-white text on near-black (was #161618 / #ebebec / #d4d4d4)
       darkMode:
         light: "#1c1c1e"
@@ -43,10 +44,10 @@ configuration:
         gray: "#86837c"
         darkgray: "#b9b6af"
         dark: "#dcd9d2"
-        secondary: "#8ba3b4"
-        tertiary: "#84a59d"
-        highlight: rgba(143, 159, 169, 0.15)
-        textHighlight: "#b3aa0288"
+        secondary: "#c4a385"
+        tertiary: "#a8896f"
+        highlight: rgba(196, 163, 133, 0.12)
+        textHighlight: "#b3902a88"
 plugins:
   - source: github:quartz-community/created-modified-date
     enabled: true

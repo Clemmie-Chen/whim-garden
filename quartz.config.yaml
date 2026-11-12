@@ -25,23 +25,25 @@ configuration:
         name: IBM Plex Mono
         weights: [400, 500]
     colors:
+      # softened: warm paper white, ink instead of near-black, lighter rules (was #faf8f8 / #2b2b2b / #4e4e4e)
       lightMode:
-        light: "#faf8f8"
-        lightgray: "#e5e5e5"
-        gray: "#b8b8b8"
-        darkgray: "#4e4e4e"
-        dark: "#2b2b2b"
-        secondary: "#284b63"
+        light: "#f7f6f2"
+        lightgray: "#e6e3dc"
+        gray: "#8f8b83"
+        darkgray: "#55524c"
+        dark: "#3b3935"
+        secondary: "#3e5d73"
         tertiary: "#84a59d"
         highlight: rgba(143, 159, 169, 0.15)
         textHighlight: "#fff23688"
+      # softened: no near-white text on near-black (was #161618 / #ebebec / #d4d4d4)
       darkMode:
-        light: "#161618"
-        lightgray: "#393639"
-        gray: "#646464"
-        darkgray: "#d4d4d4"
-        dark: "#ebebec"
-        secondary: "#7b97aa"
+        light: "#1c1c1e"
+        lightgray: "#353330"
+        gray: "#86837c"
+        darkgray: "#b9b6af"
+        dark: "#dcd9d2"
+        secondary: "#8ba3b4"
         tertiary: "#84a59d"
         highlight: rgba(143, 159, 169, 0.15)
         textHighlight: "#b3aa0288"

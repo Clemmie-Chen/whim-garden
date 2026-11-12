@@ -231,7 +231,7 @@ export const HomeFrame: PageFrame = {
 .chron .chip:has(input:checked) { background: var(--dark); border-color: var(--dark); color: var(--light); }
 .chron .chip:has(input:focus-visible) { outline: 2px solid var(--secondary); outline-offset: 2px; }
 .chron .chip b { font-weight: 500; opacity: 0.7; }
-.chron .about { margin-top: 56px; display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 24px; border-top: 1px solid var(--dark); padding-top: 16px; }
+.chron .about { margin-top: 56px; display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 24px; border-top: 1px solid var(--rule); padding-top: 16px; }
 .chron .about p { margin: 0 0 10px; color: var(--darkgray); max-width: 62ch; }
 
 /* note page */
@@ -270,7 +270,7 @@ export const HomeFrame: PageFrame = {
 .note-body article a > img { cursor: pointer; }
 .note-body article table { border-collapse: collapse; font-size: 14px; }
 .note-body article :is(th, td) { border: 0; border-bottom: 1px solid var(--lightgray); padding: 8px 16px 8px 0; text-align: left; vertical-align: top; }
-.note-body article th { font-family: var(--mf); font-size: 11px; font-weight: 500; color: var(--gray); border-bottom-color: var(--dark); }
+.note-body article th { font-family: var(--mf); font-size: 11px; font-weight: 500; color: var(--gray); border-bottom-color: var(--rule); }
 .img-zoom { position: fixed; inset: 0; z-index: 999; display: grid; place-items: center; padding: 24px; background: color-mix(in srgb, var(--light) 92%, transparent); cursor: zoom-out; opacity: 0; transition: opacity 150ms ease-out; }
 .img-zoom.on { opacity: 1; }
 .img-zoom img { max-width: 100%; max-height: 100%; border-radius: 6px; box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18); }

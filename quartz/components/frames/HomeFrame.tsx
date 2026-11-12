@@ -249,6 +249,13 @@ export const HomeFrame: PageFrame = {
 .note-body article h2 { font-size: 21px; letter-spacing: -0.01em; margin: 2.2em 0 0.5em; }
 .note-body article h3 { font-size: 17px; margin: 1.6em 0 0.4em; }
 .note-body article p { margin: 0.6em 0; }
+/* details from the prototype that Quartz's defaults replaced (most visible in dark mode) */
+.note-body article blockquote:not(.callout) { margin: 1.2em 0; padding: 2px 0 2px 16px; border-left: 2px solid var(--c2); color: var(--quiet); }
+.note-body article strong { color: var(--dark); font-weight: 600; }
+.note-body article :not(pre) > code { font-family: var(--mf); font-size: 0.85em; background: var(--highlight); color: inherit; padding: 1px 4px; border-radius: 4px; }
+.note-body article td:first-child { color: var(--dark); }
+.note-toc ul { scrollbar-width: thin; scrollbar-color: var(--lightgray) transparent; }
+.note-toc a { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } /* long headings would stack 5 lines deep in the 112px column */
 /* links as in the prototype: colour and a faint underline, not bold */
 .note-body article a:is(.internal, .external) { font-weight: inherit; background: none; padding: 0; border-radius: 0; border-bottom: 1px solid color-mix(in srgb, var(--secondary) 30%, transparent); }
 .note-body article img { display: block; max-width: 100%; height: auto; border: 1px solid var(--lightgray); border-radius: 6px; cursor: zoom-in; }

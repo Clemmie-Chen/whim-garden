@@ -259,7 +259,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 /* search box from the prototype: white field, mono placeholder, shortcut hint */
 .home-nav { --surface: #fff; }
 :root[saved-theme="dark"] .home-nav { --surface: #1d1d20; }
-.home-nav .search > .search-button { height: 32px; padding: 0 8px 0 0; border-radius: 6px; background: var(--surface); font-family: var(--mf); font-size: 13px; transition: border-color 150ms ease-out; }
+.home-nav .search > .search-button { color: var(--dark); height: 32px; padding: 0 8px 0 0; border-radius: 6px; background: var(--surface); font-family: var(--mf); font-size: 13px; transition: border-color 150ms ease-out; }
 .home-nav .search > .search-button:hover { border-color: var(--gray); }
 .home-nav .search > .search-button svg { width: 14px; min-width: 14px; margin: 0 8px 0 10px; }
 .home-nav .search > .search-button p { flex: 1; margin: 0; }

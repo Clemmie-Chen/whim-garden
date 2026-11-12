@@ -136,7 +136,8 @@ export async function onRequestPost({
     )
     return Response.json(out)
   } catch (e) {
+    // 503 not 502: Cloudflare swaps a 502 from Pages on the custom domain for its own "error code: 502" page
     console.error(e)
-    return Response.json({ error: "upstream failed" }, { status: 502 })
+    return Response.json({ error: "upstream failed" }, { status: 503 })
   }
 }

@@ -214,14 +214,16 @@ document.addEventListener("nav", () => {
 componentRegistry.register("chronicle-scripts", () => ChronicleScripts, "frames/chronicle")
 
 export const sharedCss = `
-#quartz-body { display: block; max-width: 860px; margin: 0 auto; padding: 0 2rem; }
+/* side margin grows smoothly with the window (20px on phones, 48px from ~800px), content stays 796px max */
+#quartz-body { display: block; max-width: 892px; margin: 0 auto; padding: 0 clamp(20px, 6vw, 48px); }
 .home-nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem 0; }
 .home-nav .page-title { margin: 0; font-size: 1.15rem; }
 .home-nav > .page-title { display: block; } /* the theme hides it on phones; here it is the only way home */
 .home-nav .explorer, .home-nav .readermode, .home-nav .mobile-only { display: none; }
 .home-nav .flex-component { flex: 0 1 260px; }
 
-.home-nav, .chron { --hf: "Schibsted Grotesk", system-ui, sans-serif; --bf: "Source Sans 3", "Source Sans Pro", system-ui, sans-serif; --mf: "IBM Plex Mono", ui-monospace, monospace; }
+.home-nav, .chron { --cjk: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei"; --hf: "Schibsted Grotesk", var(--cjk), system-ui, sans-serif; --bf: "Source Sans 3", "Source Sans Pro", var(--cjk), system-ui, sans-serif; --mf: "IBM Plex Mono", var(--cjk), ui-monospace, monospace; }
+/* Chinese is named explicitly so every browser picks the same Simplified Chinese face, whatever the page language */
 body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 .chron { line-height: 1.65; }
 .home-nav .page-title { font-family: var(--hf); font-weight: 700; letter-spacing: -0.01em; }
@@ -248,7 +250,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .chron a.entry:last-child { border-bottom: 0; }
 .chron .entry .k { display: flex; align-items: flex-start; gap: 8px; font-family: var(--mf); font-size: 11px; line-height: 1.6; color: var(--gray); }
 .chron .entry .k .dot { margin-top: 5px; } /* sits on the first line when the meta wraps */
-.chron .entry h3 { margin: 4px 0; font-family: var(--hf); font-weight: 600; font-size: 19px; line-height: 1.3; letter-spacing: -0.01em; color: var(--dark); transition: color 150ms ease-out; }
+.chron .entry h3 { margin: 4px 0; font-family: var(--hf); font-weight: 600; font-size: 19px; line-height: 1.3; letter-spacing: -0.01em; color: var(--dark); max-width: 30em; transition: color 150ms ease-out; }
 .chron .entry:hover h3 { color: var(--secondary); }
 /* entries rise in one after another; the delay is capped so long lists don't wait */
 .chron a.entry { animation: chron-rise 240ms cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: min(calc(var(--i, 0) * 24ms), 300ms); }
@@ -262,7 +264,8 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .home-nav .search > .search-button svg { width: 14px; min-width: 14px; margin: 0 8px 0 10px; }
 .home-nav .search > .search-button p { flex: 1; margin: 0; }
 .home-nav .search > .search-button::after { content: "⌘K"; font-family: var(--mf); font-size: 11px; color: var(--gray); border: 1px solid var(--lightgray); border-radius: 4px; padding: 0 4px; line-height: 18px; }
-.chron .entry p { margin: 4px 0 0; color: var(--quiet); font-size: 14px; font-weight: 400; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* about 36 Chinese characters (or ~75 Latin) per line at most */
+.chron .entry p { margin: 4px 0 0; color: var(--quiet); font-size: 14px; font-weight: 400; line-height: 1.6; max-width: 36em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .chron .seclinks { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 14px 0; font-family: var(--mf); font-size: 12px; }
 .chron .seclinks a { display: inline-flex; align-items: center; gap: 6px; color: var(--darkgray); background: none; padding: 0; font-weight: inherit; transition: color 150ms ease-out; }
 .chron .seclinks a:hover { color: var(--secondary); }
@@ -270,7 +273,6 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 /* long underscore titles (Week_1_Reading_…) have no break points */
 .chron :is(h1, h3, .pn strong) { overflow-wrap: anywhere; }
 @media (max-width: 800px) {
-  #quartz-body { padding: 0 1rem; }
   /* the theme sizes the footer to 100dvw - 3rem plus its own padding, which ignores the padding above */
   html .page > #quartz-body footer { min-width: 0; max-width: none; padding: 0; }
   .home-nav { flex-wrap: wrap; }

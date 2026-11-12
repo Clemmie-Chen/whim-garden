@@ -221,36 +221,51 @@ textarea.box::placeholder{color:color-mix(in srgb,var(--ink) 45%,transparent)}
 </main>
 
 <script>
-// TODO(backend): stub. Replace convert() with the real API call once the backend is decided,
-// e.g. `return (await fetch(API, {method:"POST", body:text})).json()` returning [{rom, text}] per line.
-const STUB = {上:"zaŋ",海:"he",言:"ɦe",话:"ɦu",这:"ɦə",是:"zy",普:"pu",通:"toŋ",第:"di",二:"ȵi",行:"ɦaŋ",我:"ŋu",侬:"noŋ",好:"hɔ",阿:"ɐʔ",拉:"la"};
-async function convert(text){
+// demo only: the greyed placeholder output, so the empty tool explains itself without spending an API call
+const STUB = {上:"zaŋ",海:"he",言:"ɦe",话:"wu",这:"ɦə",是:"zy",普:"pu",通:"toŋ",第:"ɖi",二:"ȵi",行:"ɦaŋ",我:"ngu",侬:"noŋ",好:"hɔ",阿:"aʔ",拉:"la"};
+function demo(text){
   return text.split("\n").filter(l=>l.trim()).map(l=>({
     rom:[...l].filter(c=>/\p{Script=Han}/u.test(c)).map(c=>STUB[c]||"·").join(" "),
     text:l
   }));
 }
-console.assert(convert("上海言话").then(r=>r[0].rom==="zaŋ he ɦe ɦu"));
+console.assert(demo("上海言话")[0].rom==="zaŋ he ɦe wu");
+// functions/api/romanize.ts -> [{rom, text}] per line
+async function convert(text){
+  const r=await fetch("/api/romanize",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});
+  if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||r.status);
+  return r.json();
+}
 
 const $=id=>document.getElementById(id);
 $("go").onclick=()=>{$("convert").scrollIntoView();$("src").focus({preventScroll:true})};
 
 // empty input shows the placeholder converted, greyed, so the tool explains itself
-let lines=[],seq=0,timer;
-async function run(){
-  const v=$("src").value,demo=!v.trim(),my=++seq;
-  const res=await convert(demo?$("src").placeholder:v);
-  if(my!==seq)return; // a newer run started while this one awaited
-  lines=demo?[]:res;
-  $("out").classList.toggle("demo",demo);
+let lines=[],seq=0;
+function show(res,isDemo){
+  $("out").classList.toggle("demo",isDemo);
   $("out").replaceChildren(...res.map(({rom,text})=>{
     const d=document.createElement("div"),r=document.createElement("p"),t=document.createElement("p");
     r.className="ipa";r.textContent=rom;t.textContent=text;d.append(r,t);return d;
   }));
 }
+const showDemo=()=>{seq++;lines=[];show(demo($("src").placeholder),true)};
+// each real run costs an LLM call, so it only fires on 转！ / Cmd+Enter, never while typing
+async function run(){
+  const v=$("src").value;
+  if(!v.trim())return showDemo();
+  const my=++seq;
+  $("run").disabled=true;$("out").textContent="转来转去……";
+  try{
+    const res=await convert(v);
+    if(my!==seq)return; // a newer run started while this one awaited
+    lines=res;show(res,false);
+  }catch(e){if(my===seq){lines=[];$("out").textContent="转勿出来："+e.message}}
+  finally{if(my===seq)$("run").disabled=false}
+}
 $("run").onclick=run;
-$("src").oninput=()=>{clearTimeout(timer);timer=setTimeout(run,250)};
-run();
+$("src").oninput=()=>{if(!$("src").value.trim())showDemo()};
+showDemo();
 $("src").onkeydown=e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))run()};
 $("copy").onclick=async e=>{
   if(!lines.length)return;

@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inner Pages Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+/* tokens copied from quartz.config.yaml + HomeFrame */
+:root { --light:#faf8f8; --lightgray:#e5e5e5; --gray:#b8b8b8; --darkgray:#4e4e4e; --dark:#2b2b2b; --secondary:#284b63; --highlight:rgba(143,159,169,.15);
+  --c0:#6f9a8f; --c1:#284b63; --c2:#a8743f; --c3:#84638a; }
+:root[data-theme="dark"] { --light:#161618; --lightgray:#393639; --gray:#646464; --darkgray:#d4d4d4; --dark:#ebebec; --secondary:#7b97aa;
+  --c0:#84a59d; --c1:#7b97aa; --c2:#c9995f; --c3:#b08fb3; }
+:root { --quiet: color-mix(in srgb, var(--darkgray) 78%, var(--light));
+  --hf:"Schibsted Grotesk",system-ui,sans-serif; --bf:"Source Sans 3",system-ui,sans-serif; --mf:"IBM Plex Mono",ui-monospace,monospace; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--light); color:var(--darkgray); font-family:var(--bf); font-size:16px; line-height:1.65; }
+a { color: inherit; text-decoration: none; }
+.sec-0{--c:var(--c0)} .sec-1{--c:var(--c1)} .sec-2{--c:var(--c2)} .sec-3{--c:var(--c3)}
+.dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--c,var(--gray)); flex:none; }
+
+/* prototype switcher — not part of the design */
+.proto { position:sticky; top:0; z-index:9; display:flex; gap:6px; justify-content:center; padding:8px; background:var(--dark); font-family:var(--mf); font-size:12px; }
+.proto button { all:unset; cursor:pointer; padding:4px 12px; border-radius:999px; color:var(--light); opacity:.6; }
+.proto button[aria-pressed="true"] { opacity:1; background:color-mix(in srgb, var(--light) 18%, transparent); }
+
+.wrap { max-width:860px; margin:0 auto; padding:0 2rem; }
+.page { display:none; } .page.on { display:block; }
+
+/* nav — identical to the homepage */
+.nav { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1.1rem 0; }
+.nav .title { font-family:var(--hf); font-weight:700; font-size:1.15rem; color:var(--dark); letter-spacing:-.01em; }
+.nav .tools { display:flex; gap:8px; align-items:center; }
+.search { width:220px; height:32px; border:1px solid var(--lightgray); border-radius:8px; padding:0 10px; font-size:13px; color:var(--gray); display:flex; align-items:center; }
+.theme { all:unset; cursor:pointer; width:32px; height:32px; display:grid; place-items:center; color:var(--gray); border-radius:8px; }
+.theme:hover { color:var(--dark); }
+
+/* page head: kicker → title → deck, same type stack as the homepage */
+.head { padding:1.9rem 0 1.6rem; }
+.kicker { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-family:var(--mf); font-size:12px; color:var(--gray); margin-bottom:10px; }
+.kicker a { color:var(--darkgray); border-bottom:1px solid var(--lightgray); transition:color 150ms ease-out; }
+.kicker a:hover { color:var(--secondary); }
+h1 { font-family:var(--hf); font-weight:600; font-size:clamp(26px,3.6vw,36px); line-height:1.15; letter-spacing:-.02em; color:var(--dark); margin:0 0 10px; }
+.deck { margin:0; color:var(--quiet); font-size:17px; max-width:60ch; }
+.mono-note { margin:0; color:var(--quiet); font-family:var(--mf); font-size:12px; }
+
+/* the day/date grid from the homepage, reused as the article grid */
+.row { display:grid; grid-template-columns:112px minmax(0,1fr); gap:28px; border-top:1px solid var(--dark); }
+.side { position:sticky; top:40px; align-self:start; padding:14px 0; font-family:var(--mf); font-size:12px; color:var(--darkgray); }
+.side b { display:block; font-family:var(--hf); font-weight:600; font-size:22px; color:var(--dark); letter-spacing:-.01em; }
+.side .lbl { display:block; margin-top:22px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--gray); }
+.toc { list-style:none; padding:0; margin:6px 0 0; font-size:11.5px; line-height:1.45; }
+.toc li { padding:3px 0 3px 8px; border-left:1px solid var(--lightgray); color:var(--gray); transition:color 150ms ease-out, border-color 150ms ease-out; }
+.toc { max-height:calc(100vh - 160px); overflow:auto; }
+.toc li.cur { border-color:var(--dark); color:var(--dark); }
+.toc li:hover { color:var(--dark); cursor:pointer; }
+
+/* article body */
+.body { padding:14px 0 40px; }
+.body > :not(figure, .tbl) { max-width:66ch; }
+.body h2 { font-family:var(--hf); font-weight:600; font-size:21px; letter-spacing:-.01em; color:var(--dark); margin:2.2em 0 .5em; }
+.body h2:first-child { margin-top:.4em; }
+.body p { margin:.6em 0; }
+.body ul { padding-left:1.2em; } .body li { margin:.2em 0; }
+.body blockquote { margin:1.2em 0; padding:2px 0 2px 16px; border-left:2px solid var(--c2); color:var(--quiet); }
+.body strong { color:var(--dark); font-weight:600; }
+.body a.internal { color:var(--secondary); border-bottom:1px solid color-mix(in srgb, var(--secondary) 30%, transparent); }
+.body mark { background:var(--highlight); color:inherit; padding:0 2px; }
+
+.body h3 { font-family:var(--hf); font-weight:600; font-size:17px; color:var(--dark); margin:1.6em 0 .4em; }
+.body h2, .body h3 { scroll-margin-top:56px; }
+.body figure { margin:1.6em 0; }
+/* click an image to see it full screen; click or Esc to close */
+.zoom { position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:24px; background:color-mix(in srgb, var(--light) 92%, transparent); cursor:zoom-out; opacity:0; transition:opacity 150ms ease-out; }
+.zoom.on { opacity:1; }
+.zoom img { max-width:100%; max-height:100%; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,.18); }
+.body figure img { display:block; width:100%; height:auto; border:1px solid var(--lightgray); border-radius:6px; cursor:zoom-in; }
+.body code { font-family:var(--mf); font-size:.85em; background:var(--highlight); padding:1px 4px; border-radius:4px; }
+.body pre { margin:1em 0; padding:12px 14px; background:var(--highlight); border-radius:6px; overflow-x:auto; }
+.body pre code { background:none; padding:0; }
+.body .tbl { overflow-x:auto; margin:1em 0; }
+.body table { border-collapse:collapse; width:100%; font-size:14px; }
+.body th { text-align:left; font-family:var(--mf); font-size:11px; font-weight:500; color:var(--gray); padding:6px 12px 6px 0; border-bottom:1px solid var(--dark); }
+.body td { padding:8px 12px 8px 0; border-bottom:1px solid var(--lightgray); vertical-align:top; }
+.body td:first-child { color:var(--dark); white-space:nowrap; }
+.body a.external { color:inherit; border-bottom:1px solid var(--lightgray); }
+.toc li.h3 { padding-left:16px; font-size:11px; }
+.pn .none { padding:16px 0; border-bottom:1px solid var(--lightgray); }
+.pn .none strong { color:var(--gray); font-weight:500; }
+/* entries — same component as the homepage list */
+.entry { display:block; padding:16px 0 18px; border-bottom:1px solid var(--lightgray); }
+.entry:last-child { border-bottom:0; }
+.entry .k { display:flex; align-items:center; gap:8px; font-family:var(--mf); font-size:11px; color:var(--gray); }
+.entry h3 { margin:4px 0; font-family:var(--hf); font-weight:600; font-size:19px; line-height:1.3; letter-spacing:-.01em; color:var(--dark); transition:color 150ms ease-out; }
+.entry:hover h3 { color:var(--secondary); }
+.entry p { margin:2px 0 0; color:var(--quiet); font-size:14px; line-height:1.5; max-width:60ch; }
+.entry.small h3 { font-size:16px; }
+.empty { padding:16px 0; font-family:var(--mf); font-size:12px; color:var(--gray); }
+
+/* related links under a note: quiet footnote, not another list of entries */
+/* same idiom as the homepage's "Rabbit holes:" line */
+.rel { margin:0 0 28px 140px; max-width:64ch; font-family:var(--mf); font-size:12px; line-height:1.6; color:var(--quiet); }
+.rel a { color:inherit; border-bottom:1px solid var(--lightgray); transition:color 150ms ease-out; }
+.rel a:hover { color:var(--darkgray); }
+@media (max-width:800px) { .rel { margin-left:0; } .pn { grid-template-columns:1fr; } .pn > * + * { border-left:0; border-top:1px solid var(--lightgray); padding-left:0; } }
+/* prev / next */
+.pn { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--lightgray); }
+.pn a { padding:16px 0; }
+.pn > * + * { text-align:right; border-left:1px solid var(--lightgray); padding-left:16px; }
+.pn a { border-bottom:1px solid var(--lightgray); }
+.pn span { display:block; font-family:var(--mf); font-size:11px; color:var(--gray); }
+.pn strong { font-family:var(--hf); font-weight:600; color:var(--dark); font-size:16px; }
+.pn a:hover strong { color:var(--secondary); }
+
+.foot { margin:56px 0 0; padding:16px 0 40px; border-top:1px solid var(--dark); display:flex; justify-content:space-between; font-family:var(--mf); font-size:11px; color:var(--gray); }
+
+@media (max-width:800px) {
+  .wrap { padding:0 1rem; }
+  .search { width:140px; }
+  .row { grid-template-columns:minmax(0,1fr); gap:0; }
+  .side { position:relative; top:0; padding-bottom:0; }
+  .side b { display:inline; font-size:16px; margin-right:8px; }
+  .side .toc, .side .lbl.toc-lbl { display:none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="proto" role="toolbar" aria-label="切换原型页面">
+  <button data-p="note" aria-pressed="true">笔记页</button>
+  <button data-p="folder" aria-pressed="false">栏目页</button>
+  <button data-p="tag" aria-pressed="false">标签页</button>
+</div>
+
+<div class="wrap">
+  <header class="nav">
+    <a class="title" href="#">Clemmie Chen</a>
+    <div class="tools">
+      <div class="search">Search</div>
+      <button class="theme" id="theme" aria-label="切换深色模式">◐</button>
+    </div>
+  </header>
+
+  <!-- ========== NOTE ========== -->
+  <main class="page on" id="note">
+    <header class="head sec-0">
+      <div class="kicker">
+        <i class="dot"></i><a href="#" data-go="folder">How I do</a> · 8 min · <a href="#" data-go="tag">#build</a>
+      </div>
+      <h1>home-rentor: 一个扣扣J人的找房比房小工具</h1>
+      <p class="deck">自如贝壳总是展示装修图，看得人眼花缭乱，但通勤、位置、价格、性价比，多看几套就晕了。借助这个小工具，你可以收集候选房源，在地图上一眼看清、对比。</p>
+    </header>
+
+    <section class="row">
+      <aside class="side">
+        <b>Jun 15</b>2026
+        <span class="lbl toc-lbl">Contents</span>
+        <ul class="toc"></ul>
+      </aside>
+      <article class="body">
+        <blockquote>起点是一个很具体的痛点：在上海租房，看完一圈房子，脑子里全是「这套阳台不行那套厨房太小」，刚看完五套，过两分钟后全忘了。这个项目是为了成为你的租房临时大脑 dumper，把临时记忆容量给腾出来。<br />仓库：<a class="external" href="#">github.com/Clemmie-Chen/home-rentor</a></blockquote>
+
+        <h2 id="s1">一句话</h2>
+        <p>候选房源散落在贝壳、小红书、中介微信里，信息对不齐、通勤靠脑补。于是做了个工具：把所有候选房源录到<strong>一张带地铁线的地图</strong>上，标面积/月租/小区、自动算通勤、记看房后的状态和备注，最后在地图上直观判断哪套值得租。</p>
+        <figure><a href="home-rentor.png" target="_blank"><img src="home-rentor.png" alt="home-rentor 地图界面：候选房源标在带地铁线的地图上" width="3834" height="1972" loading="lazy" /></a></figure>
+
+        <h2 id="s2">为什么自己做</h2>
+        <p>现成的租房 App 解决的是「找房源」，但我真正的痛点是<strong>看房之后的决策</strong>：</p>
+        <ul>
+          <li>同一个小区不同中介报价不一样，得自己并排比；</li>
+          <li>通勤不是「离地铁多远」，而是「到地铁站、实际工作地要多久」；</li>
+          <li>在软件上看完房，脑子里全是具体的装修和照片，没法横向比较真正的房子质量。</li>
+        </ul>
+
+        <h2 id="s3">几个真正花了时间的技术点</h2>
+        <h3 id="s3-1">1. 坐标系是个隐形大坑</h3>
+        <p>高德 API 返回 <strong>GCJ-02</strong>，而 OSM 底图 / Leaflet 用 <strong>WGS-84</strong>。两者差 300–600 米——<strong>足够把一套房子标到隔壁小区</strong>。</p>
+        <ul>
+          <li>入库时 <code>eviltransform.gcj2wgs()</code>：高德坐标 → 存储/上图</li>
+          <li>算通勤时再 <code>wgs2gcj()</code> 转回去喂给高德路线 API</li>
+        </ul>
+        <h3 id="s3-2">2. POI 搜索会「张冠李戴」</h3>
+        <p>搜「平吉二村」，高德第一个返回的可能是隔壁的「莲花新城」。所以选 POI 时<strong>优先取名字里包含查询词的那个</strong>。</p>
+        <h3 id="s3-3">3. 自然语言录入，但解析逻辑有两份</h3>
+        <pre><code>梧桐花园 90平 8000/月 两室两厅 电梯 朝南</code></pre>
+        <p>网页（<code>parseInput</code>）和飞书机器人（<code>bridge.py</code> 的 <code>parse_text</code>）两份解析器<strong>必须保持同步</strong>。<mark>原文是唯一数据源</mark>：解析器升级后，老房源会自动补全新字段。</p>
+        <h3 id="s3-4">4. 家用宽带没有公网 IP</h3>
+        <p>Mac mini 上 <code>server.py</code> 由 launchd 常驻，再用 <strong>Cloudflare Tunnel</strong> 出站打洞。踩的坑：<strong>不能用 <code>brew services start cloudflared</code></strong>。</p>
+
+        <h2 id="s4">如果重来会改什么</h2>
+        <ul>
+          <li>服务端目前<strong>无鉴权</strong>，拿到 URL 就能读写。</li>
+          <li>「两份解析器」是债。</li>
+          <li>「最后写入者赢」的同步在多设备同时编辑时会丢数据。</li>
+        </ul>
+
+        <h2 id="s5">技术栈速查</h2>
+        <div class="tbl"><table>
+          <thead><tr><th>层</th><th>选型</th><th>理由</th></tr></thead>
+          <tbody>
+            <tr><td>地图</td><td>Leaflet + CartoDB Positron</td><td>轻、免费、底图素净不抢房源标记</td></tr>
+            <tr><td>坐标转换</td><td>eviltransform</td><td>GCJ-02 ↔ WGS-84 必需</td></tr>
+            <tr><td>后端</td><td>Python <code>http.server</code></td><td>零依赖、单文件、够用</td></tr>
+            <tr><td>地理/通勤</td><td>高德 Web 服务 API</td><td>国内数据准，免费额度 ~5000/日</td></tr>
+            <tr><td>部署</td><td>Mac mini + launchd + Cloudflare Tunnel</td><td>家用宽带无公网 IP 的出站方案</td></tr>
+          </tbody>
+        </table></div>
+      </article>
+    </section>
+
+    <p class="rel">More in <a href="#" data-go="tag">#build</a>: <a href="#">How I build this garden? –– obsidian-quartz-guide</a>.</p>
+
+    <nav class="pn" aria-label="上一篇 / 下一篇">
+      <span class="none"><span>← Newer</span><strong>This is the latest note</strong></span>
+      <a href="#" class="sec-1"><span>Older · Jun 3 →</span><strong>Lecture 4 笔记：Cognitive Neuroscience Methods I</strong></a>
+    </nav>
+  </main>
+
+  <!-- ========== FOLDER ========== -->
+  <main class="page" id="folder">
+    <header class="head sec-0">
+      <div class="kicker"><i class="dot"></i><a href="#">Home</a> / Section · 3 notes</div>
+      <h1>How I do</h1>
+      <p class="deck">动手做的东西：工具、教程、这座花园本身</p>
+    </header>
+    <section class="row">
+      <div class="side"><b>Jun 15</b>2026</div>
+      <div>
+        <a class="entry sec-0" href="#" data-go="note">
+          <span class="k"><i class="dot"></i>How I do · 8 min · #build</span>
+          <h3>home-rentor: 一个扣扣J人的找房比房小工具</h3>
+          <p>自如贝壳总是展示装修图，看得人眼花缭乱，但通勤、位置、价格、性价比，多看几套就晕了。</p>
+        </a>
+      </div>
+    </section>
+    <section class="row">
+      <div class="side"><b>Jun 3</b>2026</div>
+      <div>
+        <a class="entry sec-0" href="#">
+          <span class="k"><i class="dot"></i>How I do · 6 min</span>
+          <h3>给mac原生字典加资源的有效教程整理</h3>
+        </a>
+      </div>
+    </section>
+    <section class="row">
+      <div class="side"><b>Jun 1</b>2026</div>
+      <div>
+        <a class="entry sec-0" href="#">
+          <span class="k"><i class="dot"></i>How I do · 15 min · #build</span>
+          <h3>How I build this garden? –– obsidian-quartz-guide</h3>
+          <p>一份「踩坑实录版」教程。目标：在 Obsidian 里写笔记，标记一下就能自动发布到你自己的域名上，私人笔记永远不外泄。</p>
+        </a>
+      </div>
+    </section>
+    <section class="row">
+      <div class="side"><span class="lbl" style="margin-top:0">Other sections</span></div>
+      <div class="mono-note" style="padding:14px 0; display:flex; flex-wrap:wrap; gap:14px">
+        <a class="sec-1" href="#"><i class="dot"></i> What I learn 3</a>
+        <a class="sec-2" href="#"><i class="dot"></i> What I read 1</a>
+        <a class="sec-3" href="#"><i class="dot"></i> What I write 2</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========== TAG ========== -->
+  <main class="page" id="tag">
+    <header class="head">
+      <div class="kicker"><a href="#">Home</a> / Tag · 2 notes</div>
+      <h1>#build</h1>
+      <p class="mono-note">Also: #philosophy · #cog-neuro-sci</p>
+    </header>
+    <section class="row">
+      <div class="side"><b>Jun 15</b>2026</div>
+      <div>
+        <a class="entry sec-0" href="#" data-go="note">
+          <span class="k"><i class="dot"></i>How I do · 8 min · #build</span>
+          <h3>home-rentor: 一个扣扣J人的找房比房小工具</h3>
+          <p>自如贝壳总是展示装修图，看得人眼花缭乱，但通勤、位置、价格、性价比，多看几套就晕了。</p>
+        </a>
+      </div>
+    </section>
+    <section class="row">
+      <div class="side"><b>Jun 1</b>2026</div>
+      <div>
+        <a class="entry sec-0" href="#">
+          <span class="k"><i class="dot"></i>How I do · 15 min · #build</span>
+          <h3>How I build this garden? –– obsidian-quartz-guide</h3>
+          <p>一份「踩坑实录版」教程。目标：在 Obsidian 里写笔记，标记一下就能自动发布到你自己的域名上，私人笔记永远不外泄。</p>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot"><span>Clemmie Chen · 2026</span><span>Built with Quartz</span></footer>
+</div>
+
+<script>
+const show = (p) => {
+  document.querySelectorAll(".page").forEach((el) => el.classList.toggle("on", el.id === p))
+  document.querySelectorAll(".proto button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.p === p))
+  scrollTo(0, 0)
+}
+document.querySelectorAll("[data-p]").forEach((b) => (b.onclick = () => show(b.dataset.p)))
+document.querySelectorAll("[data-go]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); show(a.dataset.go) }))
+// TOC: built from the article headings, click to jump, highlight the section in view
+const toc = document.querySelector("#note .toc")
+const heads = [...document.querySelectorAll("#note .body h2, #note .body h3")]
+heads.forEach((h) => {
+  const li = document.createElement("li")
+  li.textContent = h.textContent
+  li.className = h.tagName.toLowerCase()
+  li.tabIndex = 0
+  li.onclick = li.onkeydown = (e) => { if (e.type === "click" || e.key === "Enter") h.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }) }
+  toc.append(li)
+})
+const items = [...toc.children]
+const spy = () => {
+  let i = 0
+  heads.forEach((h, j) => { if (h.getBoundingClientRect().top < 120) i = j })
+  // headings near the end can never reach the top; at the bottom, the last one wins
+  if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) i = heads.length - 1
+  items.forEach((li, j) => li.classList.toggle("cur", j === i))
+}
+addEventListener("scroll", spy, { passive: true }); spy()
+
+document.querySelectorAll(".body figure a").forEach((a) => (a.onclick = (e) => {
+  e.preventDefault()
+  const z = document.createElement("div")
+  z.className = "zoom"
+  z.innerHTML = `<img src="${a.getAttribute("href")}" alt="" />`
+  const close = () => { z.remove(); removeEventListener("keydown", esc) }
+  const esc = (e) => e.key === "Escape" && close()
+  z.onclick = close
+  addEventListener("keydown", esc)
+  document.body.append(z)
+  requestAnimationFrame(() => z.classList.add("on"))
+}))
+document.getElementById("theme").onclick = () => {
+  const r = document.documentElement
+  r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark"
+}
+</script>
+</body>
+</html>

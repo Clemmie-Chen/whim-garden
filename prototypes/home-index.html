@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whim Garden home · prototypes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+:root {
+  --light: #faf8f8; --lightgray: #e5e5e5; --gray: #b8b8b8; --darkgray: #4e4e4e; --dark: #2b2b2b;
+  --secondary: #284b63; --tertiary: #84a59d; --highlight: rgba(143, 159, 169, 0.15);
+  --surface: #ffffff;
+  --c-do: #6f9a8f; --c-learn: #284b63; --c-read: #a8743f; --c-write: #84638a;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --head: "Schibsted Grotesk", system-ui, sans-serif;
+  --body: "Source Sans 3", "Source Sans Pro", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --light: #161618; --lightgray: #393639; --gray: #646464; --darkgray: #d4d4d4; --dark: #ebebec;
+    --secondary: #7b97aa; --surface: #1d1d20;
+    --c-do: #84a59d; --c-learn: #7b97aa; --c-read: #c9995f; --c-write: #b08fb3;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--light); color: var(--dark); font-family: var(--body); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--secondary); outline-offset: 2px; }
+
+.sec-do { --c: var(--c-do); } .sec-learn { --c: var(--c-learn); } .sec-read { --c: var(--c-read); } .sec-write { --c: var(--c-write); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+.mono { font-family: var(--mono); }
+.muted { color: var(--gray); }
+.off { display: none !important; }
+
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 32px; font-family: var(--mono); font-size: 13px; }
+.brand { font-family: var(--head); font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
+.nav .right { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.nav .right a:hover { color: var(--secondary); }
+.search { display: flex; align-items: center; gap: 8px; border: 1px solid var(--lightgray); border-radius: 6px; padding: 0 8px; height: 32px; background: var(--surface); font-family: var(--mono); font-size: 13px; }
+.search input { border: 0; outline: 0; background: transparent; font: inherit; color: var(--dark); width: 150px; min-width: 0; }
+.search kbd { font-family: var(--mono); font-size: 11px; color: var(--gray); border: 1px solid var(--lightgray); border-radius: 4px; padding: 0 4px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; font-family: var(--mono); font-size: 12px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--lightgray); background: transparent; cursor: pointer; transition: background-color 150ms ease-out, border-color 150ms ease-out; }
+.chip:hover { border-color: var(--gray); }
+.chip[aria-pressed="true"] { background: var(--dark); border-color: var(--dark); color: var(--light); }
+.chip b { font-weight: 500; opacity: 0.7; }
+.chip:active, .tool:active { transform: scale(0.97); }
+.empty { display: none; padding: 20px 0; color: var(--gray); font-family: var(--mono); font-size: 12px; }
+.empty.show { display: block; }
+.foot { margin-top: 48px; font-family: var(--mono); font-size: 11px; color: var(--gray); }
+
+.in { animation: rise 240ms var(--ease-out) both; animation-delay: min(calc(var(--i, 0) * 24ms), 300ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto !important; }
+}
+
+/* 1 · Ledger — one flat table, sorted by any column */
+.ledger { max-width: 1120px; margin: 0 auto; padding: 0 32px 120px; }
+.ledger .lede { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; padding: 28px 0 22px; border-bottom: 1px solid var(--dark); }
+.ledger h1 { font-family: var(--head); font-weight: 600; font-size: clamp(26px, 3.4vw, 34px); line-height: 1.15; letter-spacing: -0.02em; margin: 0; max-width: 22ch; }
+.ledger .lede p { margin: 0; font-family: var(--mono); font-size: 12px; color: var(--darkgray); max-width: 40ch; }
+.ledger .bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 16px 0; }
+.lt { font-family: var(--mono); font-size: 12px; }
+.lt .tr { display: grid; grid-template-columns: 40px minmax(0, 1fr) 92px 120px 76px 64px; gap: 14px; align-items: baseline; padding: 11px 6px; border-bottom: 1px solid var(--lightgray); }
+.lt .th { padding: 0 6px 8px; border-bottom: 1px solid var(--dark); color: var(--gray); }
+.lt .th button { border: 0; background: none; padding: 0; color: inherit; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; }
+.lt .th button:hover, .lt .th [aria-sort]:not([aria-sort="none"]) button { color: var(--dark); }
+.lt .th .arr { display: inline-block; width: 8px; transition: transform 150ms ease-out; }
+.lt .th [aria-sort="ascending"] .arr { transform: rotate(180deg); }
+.lt .th [aria-sort="none"] .arr { opacity: 0; }
+.lt a.tr { transition: background-color 120ms ease-out; }
+.lt a.tr:hover { background: var(--highlight); }
+.lt .t { font-family: var(--body); font-size: 15px; line-height: 1.4; }
+.lt .t small { display: block; font-family: var(--mono); font-size: 11px; color: var(--gray); margin-top: 2px; }
+.lt .sec { display: inline-flex; align-items: center; gap: 6px; color: var(--darkgray); }
+.lt .r { text-align: right; }
+.lt .tag { color: var(--gray); }
+
+/* 2 · Shelves — grouped by section, a sticky rail to jump between them */
+.shelves { max-width: 1180px; margin: 0 auto; padding: 0 32px 120px; display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 56px; align-items: start; }
+.rail { position: sticky; top: 0; padding-top: 22px; display: flex; flex-direction: column; gap: 22px; max-height: 100vh; }
+.rail p { margin: 0; color: var(--darkgray); font-size: 15px; }
+.toc { display: flex; flex-direction: column; font-family: var(--mono); font-size: 13px; border-top: 1px solid var(--dark); }
+.toc a { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px solid var(--lightgray); color: var(--darkgray); transition: color 150ms ease-out, background-color 150ms ease-out; }
+.toc a:hover { background: var(--highlight); }
+.toc a .n { margin-left: auto; color: var(--gray); }
+.toc a[aria-current="true"] { color: var(--dark); font-weight: 500; }
+.toc a .bar { width: 2px; height: 14px; background: var(--c); transform: scaleY(0); transition: transform 200ms var(--ease-out); }
+.toc a[aria-current="true"] .bar { transform: none; }
+.shelf { padding-top: 22px; scroll-margin-top: 0; }
+.shelf + .shelf { margin-top: 36px; }
+.shelf h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; font-family: var(--head); font-weight: 600; font-size: 24px; letter-spacing: -0.015em; }
+.shelf h2 .dot { width: 10px; height: 10px; }
+.shelf .desc { margin: 0 0 14px; color: var(--gray); font-family: var(--mono); font-size: 12px; }
+.items { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--dark); }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: baseline; padding: 12px 4px; border-bottom: 1px solid var(--lightgray); transition: background-color 120ms ease-out; }
+a.item:hover { background: var(--highlight); }
+.item .t { font-size: 16px; line-height: 1.4; }
+.item .m { font-family: var(--mono); font-size: 11px; color: var(--gray); white-space: nowrap; }
+.folder > button { width: 100%; border: 0; background: none; cursor: pointer; text-align: left; }
+.folder > button:hover { background: var(--highlight); }
+.folder .chev { display: inline-block; margin-right: 6px; color: var(--gray); transition: transform 200ms var(--ease-out); }
+.folder > button[aria-expanded="true"] .chev { transform: rotate(90deg); }
+.folder .kids { list-style: none; margin: 0; padding: 0 0 6px 22px; border-bottom: 1px solid var(--lightgray); }
+.folder .kids .item { border-bottom: 0; padding: 8px 4px; }
+.folder .kids .item .t { font-size: 15px; color: var(--darkgray); }
+.folder .kids .item:hover .t { color: var(--dark); }
+.folder .kids .open-folder { font-family: var(--mono); font-size: 11px; color: var(--secondary); padding: 6px 4px 4px; display: inline-block; }
+
+/* 3 · Chronicle — a reverse-chronological journal */
+.chron { max-width: 860px; margin: 0 auto; padding: 0 32px 120px; }
+.chron header.top { padding: 30px 0 26px; }
+.chron h1 { font-family: var(--head); font-weight: 600; font-size: clamp(26px, 3.6vw, 36px); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 10px; }
+.chron header.top p { margin: 0 0 20px; color: color-mix(in srgb, var(--darkgray) 78%, var(--light)); font-family: var(--mono); font-size: 12px; max-width: 64ch; }
+.chron header.top p a { color: inherit; border-bottom: 1px solid var(--lightgray); transition: color 150ms ease-out; }
+.chron header.top p a:hover { color: var(--darkgray); }
+.day { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 28px; border-top: 1px solid var(--dark); }
+.day .date { position: sticky; top: 0; align-self: start; padding: 14px 0; font-family: var(--mono); font-size: 12px; color: var(--darkgray); }
+.day .date b { display: block; font-family: var(--head); font-weight: 600; font-size: 22px; color: var(--dark); letter-spacing: -0.01em; }
+.entry { display: block; padding: 16px 0 18px; border-bottom: 1px solid var(--lightgray); }
+.entry:last-child { border-bottom: 0; }
+.entry .k { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; color: var(--gray); }
+.entry .k .s { color: var(--darkgray); }
+.entry h3 { margin: 4px 0 4px; font-family: var(--head); font-weight: 600; font-size: 19px; line-height: 1.3; letter-spacing: -0.01em; transition: color 150ms ease-out; }
+.entry:hover h3 { color: var(--secondary); }
+.entry p { margin: 0; color: var(--darkgray); font-size: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* 4 · Front — a front page with a lead, picks and the rest */
+.front { max-width: 1180px; margin: 0 auto; padding: 0 32px 120px; }
+.hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 56px; padding: 30px 0 34px; border-bottom: 1px solid var(--dark); }
+.hero h1 { font-family: var(--head); font-weight: 600; font-size: clamp(32px, 4.6vw, 52px); line-height: 1.05; letter-spacing: -0.025em; margin: 0; }
+.holes { font-size: 15px; color: var(--darkgray); }
+.holes .lab, .label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--gray); text-transform: uppercase; margin: 0 0 10px; }
+.holes ul { list-style: none; margin: 0; padding: 0; }
+.holes li { padding: 7px 0; border-top: 1px solid var(--lightgray); }
+.holes li b { color: var(--dark); font-weight: 600; }
+.picks { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 40px; padding: 30px 0 40px; border-bottom: 1px solid var(--dark); }
+.lead { display: flex; flex-direction: column; gap: 10px; }
+.lead .k, .pick .k { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; color: var(--darkgray); }
+.lead h2 { margin: 0; font-family: var(--head); font-weight: 600; font-size: clamp(26px, 3vw, 34px); line-height: 1.12; letter-spacing: -0.02em; transition: color 150ms ease-out; }
+.lead:hover h2, .pick:hover h3 { color: var(--secondary); }
+.lead p { margin: 0; font-size: 17px; color: var(--darkgray); max-width: 52ch; }
+.lead .more { font-family: var(--mono); font-size: 12px; color: var(--secondary); }
+.side { display: flex; flex-direction: column; }
+.pick { display: flex; flex-direction: column; gap: 6px; padding: 16px 0; border-top: 1px solid var(--lightgray); }
+.pick:first-of-type { border-top: 0; padding-top: 0; }
+.pick h3 { margin: 0; font-family: var(--head); font-weight: 600; font-size: 18px; line-height: 1.3; transition: color 150ms ease-out; }
+.pick p { margin: 0; font-size: 14px; color: var(--darkgray); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rest { padding-top: 30px; }
+.rest .head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.rest h2 { margin: 0; font-family: var(--head); font-weight: 600; font-size: 20px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; }
+.cell { display: flex; gap: 10px; align-items: baseline; padding: 11px 4px; border-top: 1px solid var(--lightgray); transition: background-color 120ms ease-out; }
+.cell:hover { background: var(--highlight); }
+.cell .dot { position: relative; top: -1px; }
+.cell .t { flex: 1; min-width: 0; font-size: 15px; line-height: 1.4; }
+.cell .m { font-family: var(--mono); font-size: 11px; color: var(--gray); white-space: nowrap; }
+.about { margin-top: 56px; display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 24px; border-top: 1px solid var(--dark); padding-top: 16px; }
+.about p { margin: 0 0 10px; color: var(--darkgray); max-width: 62ch; }
+.front.searching .hero, .front.searching .picks { display: none; }
+
+@media (max-width: 860px) {
+  .nav { padding: 16px; flex-wrap: wrap; }
+  .search input { width: 120px; }
+  .ledger, .chron, .front { padding-left: 16px; padding-right: 16px; }
+  .lt .tr { grid-template-columns: 28px minmax(0, 1fr) 70px; gap: 10px; }
+  .lt .tr > :nth-child(4), .lt .tr > :nth-child(5), .lt .tr > :nth-child(6) { display: none; }
+  .shelves { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 0 16px 120px; }
+  .rail { position: relative; max-height: none; }
+  .toc { flex-direction: row; overflow-x: auto; border-top: 0; gap: 6px; }
+  .toc a { border: 1px solid var(--lightgray); border-radius: 999px; padding: 6px 12px; white-space: nowrap; }
+  .toc a .bar { display: none; }
+  .day { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .day .date { position: relative; padding-bottom: 0; }
+  .day .date b { display: inline; font-size: 16px; margin-right: 8px; }
+  .hero, .picks, .grid2, .about { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+}
+
+/*PICKER_CSS*/
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<nav class="proto-picker" aria-label="Prototype variants">
+  <span class="proto-picker-highlight" aria-hidden="true"></span>
+  <button class="proto-picker-item" data-active aria-current="true">Ledger</button>
+  <button class="proto-picker-item">Shelves</button>
+  <button class="proto-picker-item">Chronicle</button>
+  <button class="proto-picker-item">Front</button>
+  <span class="proto-picker-divider" aria-hidden="true"></span>
+  <button class="proto-picker-item proto-picker-replay" aria-label="Replay animation (R)">↻</button>
+</nav>
+
+<script>
+// ---------- data: the garden as it is published today ----------
+const SITE = 'https://clemmiechen.cc/';
+const SECS = {
+  do: { name: 'How I do', short: 'Do', desc: '动手做的东西：工具、教程、这座花园本身' },
+  learn: { name: 'What I learn', short: 'Learn', desc: '在上的课和配套阅读' },
+  read: { name: 'What I read', short: 'Read', desc: '读书笔记' },
+  write: { name: 'What I write', short: 'Write', desc: '自己写的长文' },
+};
+const SEC_ORDER = ['do', 'learn', 'read', 'write'];
+const NOTES = [
+  { id: 'rentor', sec: 'do', tag: 'build', title: 'Home-rentor：把看房决策浓缩进一张图', path: 'How I do/Home-rentor：把看房决策浓缩进一张图', date: '2026-06-15', words: 1247, ex: '候选房源散落在贝壳、小红书、中介微信里，信息对不齐、通勤靠脑补。于是做了个工具：把所有候选房源录到一张带地铁线的地图上，看房之后在地图上判断哪套值得租。' },
+  { id: 'dict', sec: 'do', tag: '', title: '给mac原生字典加资源的有效教程整理', path: 'How I do/给mac原生字典加资源的有效教程整理', date: '2026-06-03', words: 15, ex: '一份发布在豆瓣上的教程整理。' },
+  { id: 'guide', sec: 'do', tag: 'build', title: 'How I build this garden? –– obsidian-quartz-guide', path: 'How I do/How I build this garden? –– obsidian-quartz-guide', date: '2026-06-01', words: 2147, ex: '一份「踩坑实录版」教程：在 Obsidian 里写笔记，标记一下就能自动发布到自己的域名上，私人笔记永远不外泄。' },
+  { id: 'brain', sec: 'learn', tag: 'cog-neuro-sci', folder: true, title: 'The Human Brain (MIT 9.13)', path: 'What I learn/The Human Brain (MIT 9.13)/', date: '2026-06-03', words: 160, ex: 'A charming story that everyone should listen.' },
+  { id: 'l2', parent: 'brain', sec: 'learn', tag: 'cog-neuro-sci', title: 'Lecture 2 笔记：Neuroanatomy 神经解剖', path: 'What I learn/The Human Brain (MIT 9.13)/Week2_Neuroanatomy', date: '2026-06-03', words: 5699, ex: '一节「压缩补课」：飞快地过一遍神经解剖基础，为真实人脑解剖示范做铺垫。' },
+  { id: 'l4', parent: 'brain', sec: 'learn', tag: 'cog-neuro-sci', title: 'Lecture 4 笔记：Cognitive Neuroscience Methods I', path: 'What I learn/The Human Brain (MIT 9.13)/Week4_CogNeuroMethodsI_笔记', date: '2026-06-03', words: 3543, ex: '人脸知觉研究方法综述的上半场。' },
+  { id: 'l5', parent: 'brain', sec: 'learn', tag: 'cog-neuro-sci', title: 'Lecture 5 笔记：Cognitive Neuroscience Methods II', path: 'What I learn/The Human Brain (MIT 9.13)/Week5_CogNeuroMethodsII_笔记', date: '2026-06-03', words: 5686, ex: '本课为人脸知觉方法综述的下半场（Part 2 of 2），续 Lecture 4。' },
+  { id: 'marr', parent: 'brain', sec: 'learn', tag: 'cog-neuro-sci', title: 'Reading Note：Marr (1982) Vision — General Introduction', path: 'What I learn/The Human Brain (MIT 9.13)/Week2_Reading1_Marr1982_中英对照', date: '2026-06-02', words: 5282, ex: 'What the retina receives is just an array of intensity values; that "there is a cat, two meters away" is not written in it.' },
+  { id: 'tootell', parent: 'brain', sec: 'learn', tag: 'cog-neuro-sci', title: 'Reading Note：Tootell et al. (1995) 运动后效 × 人脑 MT', path: 'What I learn/The Human Brain (MIT 9.13)/Week2_Reading2_Tootell1995_运动后效在人脑 MT 区的成像', date: '2026-06-02', words: 3262, ex: '运动后效在人脑 MT 区的成像。' },
+  { id: 'kanwisher', parent: 'brain', sec: 'learn', tag: 'cog-neuro-sci', title: 'Week 1 Reading：Kanwisher (2010) 功能特异性', path: 'What I learn/The Human Brain (MIT 9.13)/Week_1_Reading_Kanwisher2010_功能特异性', date: '2026-06-01', words: 4368, ex: '人脑中确实存在一些对单一高级认知功能高度专门化的皮层区域，用 fMRI 把它们一个个找出来。' },
+  { id: 'lyotard', sec: 'read', tag: 'philosophy', title: '后现代状况｜Lyotard', path: 'What I read/后现代状况｜Lyotard', date: '2026-06-01', words: 3781, ex: '后现代＝对元叙事的怀疑。知识和权力是一个问题的两方面：谁决定知识是什么？' },
+  { id: 'thomas', sec: 'write', tag: '', title: 'Clarence Thomas｜为什么黑人会成为右派保守民族主义者', path: 'What I write/Clarence Thomas｜为什么黑人会成为右派保守民族主义者', date: '2026-06-03', words: 14, ex: '一篇发布在豆瓣上的长文。' },
+  { id: 'modern', sec: 'write', tag: 'philosophy', title: '现代性的哲学话语——读书笔记', path: 'What I write/现代性的哲学话语：从黑格尔到哈贝马斯——读《现代性的哲学话语》', date: '2026-06-01', words: 5875, ex: '哈贝马斯回到黑格尔曾做出选择的十字路口，走向另一条路：拒绝以理性为中心的主体哲学，转而发展主体间的「交往理性」。' },
+];
+const BY_ID = Object.fromEntries(NOTES.map((n) => [n.id, n]));
+const SORTED = [...NOTES].sort((a, b) => b.date.localeCompare(a.date) || b.words - a.words);
+const count = (sec) => NOTES.filter((n) => n.sec === sec).length;
+
+const url = (n) => SITE + encodeURI(n.path.replace(/\?/g, '').replace(/ /g, '-'));
+const mins = (n) => Math.max(1, Math.round(n.words / 400));
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const fmt = (d) => MONTHS[+d.slice(5, 7) - 1] + ' ' + +d.slice(8, 10);
+const pad = (i) => String(i).padStart(2, '0');
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ext = 'target="_blank" rel="noopener"';
+const kind = (n) => (n.folder ? `课程 · ${NOTES.filter((c) => c.parent === n.id).length} 篇` : `${mins(n)} min`);
+
+// ---------- shared pieces ----------
+function navHTML(placeholder = '搜索标题和摘要') {
+  return `<header class="nav">
+    <a class="brand" href="${SITE}" ${ext}>Whim Garden</a>
+    <div class="right">
+      <label class="search"><input type="search" data-q placeholder="${placeholder}" aria-label="搜索"><kbd>/</kbd></label>
+    </div>
+  </header>`;
+}
+function chips() {
+  return `<div class="chips" role="group" aria-label="按栏目筛选">
+    <button class="chip" data-f="all" aria-pressed="true">All <b>${NOTES.length}</b></button>
+    ${SEC_ORDER.map((s) => `<button class="chip" data-f="${s}" aria-pressed="false"><i class="dot sec-${s}"></i>${SECS[s].short} <b>${count(s)}</b></button>`).join('')}
+  </div>`;
+}
+const RABBIT = `Rabbit holes: <a href="${url(BY_ID.brain)}" ${ext}>the brain</a>, LLM interpretability, Kant, and the phonology of Shanghainese.`;
+const ABOUT = `<section class="about"><span class="label">About</span><div>
+    <p>I'm Clemmentine — AI Agent PM at a startup; before that Pine AI, Syft AI and Toki AI.</p>
+    <p>A master's in Linguistic Data Science and a bachelor's in Hindi. My mother tongue is Chinese, so the language here is a mixture.</p>
+  </div></section>`;
+const FOOT = `<p class="foot">Built with Obsidian, Quartz and Quartz Syncer.</p>`;
+
+// filter: section + query over everything with [data-id]; groups hide when emptied
+function wire(root, { scope = root, onChange } = {}) {
+  const state = { sec: 'all', q: '' };
+  const match = (n) => {
+    const q = state.q.trim().toLowerCase();
+    return (state.sec === 'all' || n.sec === state.sec) && (!q || (n.title + ' ' + n.ex + ' ' + n.tag).toLowerCase().includes(q));
+  };
+  const apply = () => {
+    scope.querySelectorAll('[data-id]').forEach((el) => el.classList.toggle('off', !match(BY_ID[el.dataset.id])));
+    // a group stays if any of its items survive (a folder survives when a child does)
+    [...scope.querySelectorAll('[data-group]')].reverse().forEach((g) => {
+      const self = g.matches('[data-id]') && match(BY_ID[g.dataset.id]);
+      g.classList.toggle('off', !self && !g.querySelector('[data-id]:not(.off)'));
+    });
+    const any = scope.querySelector('[data-id]:not(.off)');
+    scope.querySelectorAll('.empty').forEach((e) => e.classList.toggle('show', !any));
+    root.querySelectorAll('[data-f]').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.f === state.sec)));
+    root.querySelectorAll('[data-count]').forEach((c) => (c.textContent = scope.querySelectorAll('[data-id]:not(.off):not([data-group])').length));
+    onChange?.(state);
+  };
+  const setSec = (s) => { state.sec = state.sec === s && s !== 'all' ? 'all' : s; apply(); };
+  root.addEventListener('click', (e) => { const c = e.target.closest('[data-f]'); if (c) setSec(c.dataset.f); });
+  root.querySelectorAll('[data-q]').forEach((inp) => inp.addEventListener('input', () => { state.q = inp.value; apply(); }));
+  return { state, apply, setSec };
+}
+
+function slashFocus(root) {
+  const h = (e) => {
+    if (e.key !== '/' || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+    const inp = root.querySelector('[data-q]'); if (inp) { e.preventDefault(); inp.focus(); }
+  };
+  document.addEventListener('keydown', h);
+  return () => document.removeEventListener('keydown', h);
+}
+
+// ---------- variants ----------
+const COLS = [
+  { key: 'title', label: 'Title', get: (n) => n.title },
+  { key: 'sec', label: 'Section', get: (n) => SEC_ORDER.indexOf(n.sec) },
+  { key: 'tag', label: 'Tag', get: (n) => n.tag || '~' },
+  { key: 'date', label: 'Updated', get: (n) => n.date, r: true },
+  { key: 'words', label: 'Length', get: (n) => n.words, r: true },
+];
+
+const variants = [
+  // 1 · Ledger — every note in one flat table; any column sorts it
+  () => `<div class="v-ledger">${navHTML()}<main class="ledger">
+      <div class="lede">
+        <h1>I read, think, take notes, and share my braindumps here.</h1>
+        <p>${RABBIT}</p>
+      </div>
+      <div class="bar">${chips()}<span class="mono muted" style="font-size:12px"><span data-count>${NOTES.length}</span> notes · 点表头排序</span></div>
+      <div class="lt" role="table" aria-label="全部笔记">
+        <div class="tr th" role="row"><span role="columnheader">No.</span>
+          ${COLS.map((c) => `<span role="columnheader" class="${c.r ? 'r' : ''}" aria-sort="${c.key === 'date' ? 'descending' : 'none'}"><button data-sort="${c.key}">${c.label}<span class="arr">↓</span></button></span>`).join('')}
+        </div>
+        <div data-body>
+          ${SORTED.map((n, i) => `<a class="tr in" role="row" data-id="${n.id}" href="${url(n)}" ${ext} style="--i:${i}">
+            <span class="no muted">${pad(i + 1)}</span>
+            <span class="t">${esc(n.title)}${n.parent ? `<small>↳ ${esc(BY_ID[n.parent].title)}</small>` : ''}</span>
+            <span class="sec sec-${n.sec}"><i class="dot"></i>${SECS[n.sec].short}</span>
+            <span class="tag">${n.tag ? '#' + n.tag : '—'}</span>
+            <span class="r muted">${fmt(n.date)}</span>
+            <span class="r muted">${n.folder ? 'folder' : mins(n) + ' min'}</span>
+          </a>`).join('')}
+        </div>
+        <p class="empty">没有匹配的笔记。</p>
+      </div>
+      ${FOOT}
+    </main></div>`,
+
+  // 2 · Shelves — one shelf per section; the rail jumps between them
+  () => `<div class="v-shelves">${navHTML()}<main class="shelves">
+      <aside class="rail">
+        <p>I read, think, take notes, and share my braindumps here. ${RABBIT}</p>
+        <nav class="toc" aria-label="栏目">
+          ${SEC_ORDER.map((s) => `<a href="#shelf-${s}" class="sec-${s}" data-toc="${s}"><i class="bar"></i><i class="dot"></i>${SECS[s].name}<span class="n">${count(s)}</span></a>`).join('')}
+        </nav>
+        <p class="mono muted" style="font-size:11px">Built with Obsidian, Quartz and Quartz Syncer.</p>
+      </aside>
+      <div>
+        ${SEC_ORDER.map((s) => {
+          const top = SORTED.filter((n) => n.sec === s && !n.parent);
+          return `<section class="shelf sec-${s}" id="shelf-${s}" data-shelf="${s}" data-group>
+            <h2><i class="dot"></i>${SECS[s].name}</h2>
+            <p class="desc">${SECS[s].desc} · ${count(s)} 篇</p>
+            <ul class="items">${top.map((n, i) => {
+              if (!n.folder) return `<li class="in" data-id="${n.id}" style="--i:${i}"><a class="item" href="${url(n)}" ${ext}><span class="t">${esc(n.title)}</span><span class="m">${fmt(n.date)} · ${mins(n)} min</span></a></li>`;
+              const kids = SORTED.filter((c) => c.parent === n.id);
+              return `<li class="folder in" data-id="${n.id}" data-group style="--i:${i}">
+                <button class="item" aria-expanded="false" data-fold><span class="t"><span class="chev" aria-hidden="true">›</span>${esc(n.title)}</span><span class="m">课程 · ${kids.length} 篇</span></button>
+                <ul class="kids" hidden>
+                  ${kids.map((c) => `<li data-id="${c.id}"><a class="item" href="${url(c)}" ${ext}><span class="t">${esc(c.title)}</span><span class="m">${mins(c)} min</span></a></li>`).join('')}
+                  <li><a class="open-folder" href="${url(n)}" ${ext}>打开课程主页 →</a></li>
+                </ul>
+              </li>`;
+            }).join('')}</ul>
+          </section>`;
+        }).join('')}
+        <p class="empty">没有匹配的笔记。</p>
+      </div>
+    </main></div>`,
+
+  // 3 · Chronicle — newest first, grouped by day, with a line of each note
+  () => {
+    const days = [...new Set(SORTED.map((n) => n.date))];
+    return `<div class="v-chron">${navHTML()}<main class="chron">
+      <header class="top">
+        <h1>I read, think, take notes, and share my braindumps here.</h1>
+        <p>${RABBIT}</p>
+        ${chips()}
+      </header>
+      ${days.map((d, di) => `<section class="day" data-group>
+        <div class="date"><b>${fmt(d)}</b>${d.slice(0, 4)}</div>
+        <div>${SORTED.filter((n) => n.date === d).map((n, i) => `<a class="entry in" data-id="${n.id}" href="${url(n)}" ${ext} style="--i:${di * 3 + i}">
+            <span class="k sec-${n.sec}"><i class="dot"></i><span class="s">${SECS[n.sec].name}</span>${n.parent ? '· MIT 9.13' : ''}<span>· ${kind(n)}</span>${n.tag ? `<span>· #${n.tag}</span>` : ''}</span>
+            <h3>${esc(n.title)}</h3>
+            <p>${esc(n.ex)}</p>
+          </a>`).join('')}</div>
+      </section>`).join('')}
+      <p class="empty">没有匹配的笔记。</p>
+      ${ABOUT}${FOOT}
+    </main></div>`;
+  },
+
+  // 4 · Front — one lead story, two picks, then everything else by section
+  () => {
+    const lead = BY_ID.rentor, picks = [BY_ID.guide, BY_ID.modern];
+    const card = (n, cls) => `<a class="${cls} sec-${n.sec}" href="${url(n)}" ${ext}>
+        <span class="k"><i class="dot"></i>${SECS[n.sec].name} · ${fmt(n.date)} · ${kind(n)}</span>
+        ${cls === 'lead' ? `<h2>${esc(n.title)}</h2>` : `<h3>${esc(n.title)}</h3>`}
+        <p>${esc(n.ex)}</p>${cls === 'lead' ? '<span class="more">Read →</span>' : ''}
+      </a>`;
+    return `<div class="v-front">${navHTML()}<main class="front">
+      <section class="hero in">
+        <h1>I read, think, take notes, and share my braindumps here.</h1>
+        <div class="holes"><p class="lab">Rabbit holes</p><ul>
+          <li><b>Cognitive neuroscience</b> — <a href="${url(BY_ID.brain)}" ${ext} style="color:var(--secondary)">the brain</a>, attention, memory, ADHD</li>
+          <li><b>LLM</b> — interpretability, alignment, multi-agent orchestration</li>
+          <li><b>Philosophy</b> — ethics, an unreasonable resonance with Kant</li>
+          <li><b>Linguistics</b> — phonetics and phonology of Shanghainese</li>
+        </ul></div>
+      </section>
+      <section class="picks in" style="--i:2" aria-label="精选">
+        ${card(lead, 'lead')}
+        <div class="side"><p class="label">Also worth your time</p>${picks.map((n) => card(n, 'pick')).join('')}</div>
+      </section>
+      <section class="rest" data-scope>
+        <div class="head"><h2>Everything · <span data-count>${NOTES.length}</span></h2>${chips()}</div>
+        <div class="grid2">${SORTED.map((n, i) => `<a class="cell in sec-${n.sec}" data-id="${n.id}" href="${url(n)}" ${ext} style="--i:${i + 4}"><i class="dot"></i><span class="t">${esc(n.title)}</span><span class="m">${fmt(n.date)}</span></a>`).join('')}</div>
+        <p class="empty">没有匹配的笔记。</p>
+      </section>
+      ${ABOUT}${FOOT}
+    </main></div>`;
+  },
+];
+
+// per-variant behavior, run after each mount; returns a teardown
+const behaviors = [
+  (root) => {
+    const body = root.querySelector('[data-body]');
+    const w = wire(root, { onChange: () => body.querySelectorAll('.tr:not(.off) .no').forEach((el, i) => (el.textContent = pad(i + 1))) });
+    let sort = { key: 'date', dir: -1 };
+    root.querySelectorAll('[data-sort]').forEach((b) => b.addEventListener('click', () => {
+      const key = b.dataset.sort;
+      sort = { key, dir: sort.key === key ? -sort.dir : key === 'date' || key === 'words' ? -1 : 1 };
+      const col = COLS.find((c) => c.key === key);
+      [...body.children].sort((x, y) => {
+        const a = col.get(BY_ID[x.dataset.id]), c = col.get(BY_ID[y.dataset.id]);
+        return (a < c ? -1 : a > c ? 1 : 0) * sort.dir || BY_ID[y.dataset.id].date.localeCompare(BY_ID[x.dataset.id].date);
+      }).forEach((r) => body.appendChild(r));
+      root.querySelectorAll('[aria-sort]').forEach((h) => h.setAttribute('aria-sort', h.contains(b) ? (sort.dir > 0 ? 'ascending' : 'descending') : 'none'));
+      w.apply();
+    }));
+    return slashFocus(root);
+  },
+
+  (root) => {
+    const fold = (btn, open) => { btn.setAttribute('aria-expanded', String(open)); btn.nextElementSibling.hidden = !open; };
+    root.querySelectorAll('[data-fold]').forEach((b) => b.addEventListener('click', () => fold(b, b.getAttribute('aria-expanded') !== 'true')));
+    // searching opens any folder that holds a match
+    wire(root, { onChange: (s) => root.querySelectorAll('[data-fold]').forEach((b) => { if (s.q.trim()) fold(b, !!b.nextElementSibling.querySelector('[data-id]:not(.off)')); }) });
+    const links = [...root.querySelectorAll('[data-toc]')];
+    const mark = (s) => links.forEach((a) => a.setAttribute('aria-current', String(a.dataset.toc === s)));
+    mark('do');
+    links.forEach((a) => a.addEventListener('click', (e) => {
+      e.preventDefault();
+      root.querySelector('#shelf-' + a.dataset.toc).scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+      mark(a.dataset.toc);
+    }));
+    const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && mark(e.target.dataset.shelf)), { rootMargin: '-20% 0px -70% 0px' });
+    root.querySelectorAll('[data-shelf]').forEach((s) => io.observe(s));
+    const off = slashFocus(root);
+    return () => { io.disconnect(); off(); };
+  },
+
+  (root) => { wire(root); return slashFocus(root); },
+
+  (root) => {
+    const front = root.querySelector('.front');
+    wire(root, { scope: root.querySelector('[data-scope]'), onChange: (s) => front.classList.toggle('searching', !!s.q.trim()) });
+    return slashFocus(root);
+  },
+];
+
+// ---------- picker wiring (PICKER.md reference, plus a behavior hook after mount) ----------
+const stage = document.getElementById('stage');
+const picker = document.querySelector('.proto-picker');
+const highlight = picker.querySelector('.proto-picker-highlight');
+const items = [...picker.querySelectorAll('.proto-picker-item:not(.proto-picker-replay)')];
+const replay = picker.querySelector('.proto-picker-replay');
+let current = 0;
+let teardown = null;
+
+function moveHighlight() {
+  const el = items[current];
+  highlight.style.width = el.offsetWidth + 'px';
+  highlight.style.transform = `translateX(${el.offsetLeft}px)`;
+}
+
+function mount(i) {
+  teardown?.(); teardown = null;
+  stage.innerHTML = '';
+  // Clear first, render next frame, so entrance animations re-run.
+  requestAnimationFrame(() => { stage.innerHTML = variants[i](); window.scrollTo(0, 0); teardown = behaviors[i](stage.firstElementChild); });
+}
+
+function setActive(i) {
+  if (i < 0 || i >= variants.length) return;
+  current = i;
+  items.forEach((el, j) => {
+    el.toggleAttribute('data-active', j === i);
+    if (j === i) el.setAttribute('aria-current', 'true');
+    else el.removeAttribute('aria-current');
+  });
+  moveHighlight();
+  const url = new URL(location);
+  url.searchParams.set('v', i + 1);
+  history.replaceState(null, '', url);
+  mount(i);
+}
+
+items.forEach((el, i) => el.addEventListener('click', () => setActive(i)));
+replay?.addEventListener('click', () => mount(current));
+window.addEventListener('resize', moveHighlight);
+
+document.addEventListener('keydown', (e) => {
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const num = parseInt(e.key, 10);
+  if (num >= 1 && num <= variants.length) setActive(num - 1);
+  else if (e.key === 'ArrowRight') setActive((current + 1) % variants.length);
+  else if (e.key === 'ArrowLeft') setActive((current - 1 + variants.length) % variants.length);
+  else if (e.key === 'r' || e.key === 'R') mount(current);
+});
+
+setActive((parseInt(new URLSearchParams(location.search).get('v'), 10) || 1) - 1);
+// Enable the slide only after first paint, so load doesn't animate.
+requestAnimationFrame(() => requestAnimationFrame(() => picker.setAttribute('data-ready', '')));
+</script>
+</body>
+</html>

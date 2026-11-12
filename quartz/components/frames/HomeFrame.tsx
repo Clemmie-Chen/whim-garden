@@ -245,7 +245,10 @@ export const HomeFrame: PageFrame = {
 .note-toc a.cur { border-color: var(--dark); color: var(--dark); }
 .note-body { padding: 14px 0 40px; min-width: 0; }
 .note-body article > * > :not(figure, table, .table-container, img, pre) { max-width: 66ch; }
-.note-body article :is(h1, h2, h3, h4) { scroll-margin-top: 16px; }
+.note-body article :is(h1, h2, h3, h4) { scroll-margin-top: 16px; font-family: var(--hf); font-weight: 600; color: var(--dark); }
+.note-body article h2 { font-size: 21px; letter-spacing: -0.01em; margin: 2.2em 0 0.5em; }
+.note-body article h3 { font-size: 17px; margin: 1.6em 0 0.4em; }
+.note-body article p { margin: 0.6em 0; }
 .note-body article img { display: block; max-width: 100%; height: auto; border: 1px solid var(--lightgray); border-radius: 6px; cursor: zoom-in; }
 .note-body article a > img { cursor: pointer; }
 .note-body article table { border-collapse: collapse; font-size: 14px; }

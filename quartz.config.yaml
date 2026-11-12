@@ -16,9 +16,14 @@ configuration:
     fontOrigin: googleFonts
     cdnCaching: true
     typography:
-      header: Schibsted Grotesk
-      body: Source Sans Pro
-      code: IBM Plex Mono
+      # the chronicle frames use header 600 and mono 500; without them the browser fakes or falls back to 700
+      header:
+        name: Schibsted Grotesk
+        weights: [500, 600, 700]
+      body: Source Sans 3
+      code:
+        name: IBM Plex Mono
+        weights: [400, 500]
     colors:
       lightMode:
         light: "#faf8f8"

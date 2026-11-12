@@ -248,7 +248,15 @@ export const HomeFrame: PageFrame = {
 .note-body article :is(h1, h2, h3, h4) { scroll-margin-top: 16px; font-family: var(--hf); font-weight: 600; color: var(--dark); }
 .note-body article h2 { font-size: 21px; letter-spacing: -0.01em; margin: 2.2em 0 0.5em; }
 .note-body article h3 { font-size: 17px; margin: 1.6em 0 0.4em; }
-.note-body article p { margin: 0.6em 0; }
+/* Chinese reads best around 1.8–2x leading; set on p/li directly because the theme sets theirs */
+.note-body article :is(p, li, blockquote, td) { line-height: 1.9; }
+.note-body article p { margin: 0.8em 0; }
+.note-body article h2 { line-height: 1.5; }
+.note-body article h3 { line-height: 1.55; }
+.chron .deck { line-height: 1.75; }
+.chron .about p { line-height: 1.85; }
+.chron .related { line-height: 1.8; }
+.chron .pn strong { line-height: 1.45; }
 /* details from the prototype that Quartz's defaults replaced (most visible in dark mode) */
 .note-body article blockquote:not(.callout) { margin: 1.2em 0; padding: 2px 0 2px 16px; border-left: 2px solid var(--c2); color: var(--quiet); }
 .note-body article strong { color: var(--dark); font-weight: 600; }
@@ -278,7 +286,7 @@ export const HomeFrame: PageFrame = {
 @media (max-width: 800px) {
   .chron .about { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .note-toc { display: none; }
-  .chron .deck { font-size: 15px; line-height: 1.6; }
+  .chron .deck { font-size: 15px; }
   .note-body { padding-top: 6px; }
   .note-body article { font-size: 15.5px; line-height: 1.8; }
   .note-body article h2 { font-size: 18px; font-weight: 500; margin-top: 2em; }

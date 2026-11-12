@@ -233,9 +233,9 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .chron .sec-0 { --c: var(--c0); } .chron .sec-1 { --c: var(--c1); } .chron .sec-2 { --c: var(--c2); } .chron .sec-3 { --c: var(--c3); } .chron .sec-4 { --c: var(--c4); } .chron .sec-5 { --c: var(--c5); }
 .chron .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--gray)); flex: none; }
 .chron .top { padding: 1.9rem 0 1.6rem; }
-.chron h1 { font-family: var(--hf); font-weight: 600; font-size: clamp(26px, 3.6vw, 36px); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 10px; color: var(--dark); }
+.chron h1 { font-family: var(--hf); font-weight: 600; font-size: clamp(26px, 3.6vw, 36px); line-height: 1.3; letter-spacing: -0.02em; margin: 0 0 10px; color: var(--dark); }
 .chron .holes, .chron .secdesc { margin: 0 0 20px; color: var(--quiet); font-family: var(--mf); font-size: 12px; max-width: 64ch; }
-.chron .holes { line-height: 1.5; }
+.chron .holes { line-height: 1.75; }
 .chron .holes a { color: inherit; background: none; padding: 0; border-bottom: 1px solid var(--lightgray); font-weight: inherit; transition: color 150ms ease-out; }
 .chron .holes a:hover { color: var(--darkgray); }
 .chron .kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; font-family: var(--mf); font-size: 12px; color: var(--gray); }
@@ -250,7 +250,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .chron a.entry:last-child { border-bottom: 0; }
 .chron .entry .k { display: flex; align-items: flex-start; gap: 8px; font-family: var(--mf); font-size: 11px; line-height: 1.6; color: var(--gray); }
 .chron .entry .k .dot { margin-top: 5px; } /* sits on the first line when the meta wraps */
-.chron .entry h3 { margin: 4px 0; font-family: var(--hf); font-weight: 600; font-size: 19px; line-height: 1.3; letter-spacing: -0.01em; color: var(--dark); max-width: 30em; transition: color 150ms ease-out; }
+.chron .entry h3 { margin: 4px 0; font-family: var(--hf); font-weight: 600; font-size: 19px; line-height: 1.45; letter-spacing: -0.01em; color: var(--dark); max-width: 30em; transition: color 150ms ease-out; }
 .chron .entry:hover h3 { color: var(--secondary); }
 /* entries rise in one after another; the delay is capped so long lists don't wait */
 .chron a.entry { animation: chron-rise 240ms cubic-bezier(0.23, 1, 0.32, 1) both; animation-delay: min(calc(var(--i, 0) * 24ms), 300ms); }
@@ -265,7 +265,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .home-nav .search > .search-button p { flex: 1; margin: 0; }
 .home-nav .search > .search-button::after { content: "⌘K"; font-family: var(--mf); font-size: 11px; color: var(--gray); border: 1px solid var(--lightgray); border-radius: 4px; padding: 0 4px; line-height: 18px; }
 /* about 36 Chinese characters (or ~75 Latin) per line at most */
-.chron .entry p { margin: 4px 0 0; color: var(--quiet); font-size: 14px; font-weight: 400; line-height: 1.6; max-width: 36em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.chron .entry p { margin: 4px 0 0; color: var(--quiet); font-size: 14px; font-weight: 400; line-height: 1.8; max-width: 36em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .chron .seclinks { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 14px 0; font-family: var(--mf); font-size: 12px; }
 .chron .seclinks a { display: inline-flex; align-items: center; gap: 6px; color: var(--darkgray); background: none; padding: 0; font-weight: inherit; transition: color 150ms ease-out; }
 .chron .seclinks a:hover { color: var(--secondary); }
@@ -286,7 +286,6 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
   .home-nav .page-title { font-size: 16px; font-weight: 600; }
   .chron .top { padding: 1.6rem 0 1.4rem; }
   .chron h1 { font-size: 22px; font-weight: 500; line-height: 1.3; letter-spacing: -0.015em; margin-bottom: 12px; }
-  .chron .holes { line-height: 1.7; }
   .chron .chips { gap: 8px 6px; }
   .chron .date { padding-top: 18px; }
   .chron .date b { font-size: 14px; font-weight: 500; }

@@ -21,7 +21,8 @@ function Home({ componentData, left, footer: Footer }: PageFrameProps) {
     .map(
       (_, i) => `.chron:has(input[value="${i}"]:checked) .entry:not([data-sec="${i}"]),
 .chron:has(input[value="${i}"]:checked) .day:not(:has(.entry[data-sec="${i}"])) { display: none; }
-.chron:has(input[value="${i}"]:checked) .secdesc[data-sec="${i}"] { display: block; }`,
+.chron:has(input[value="${i}"]:checked) .secdesc[data-sec="${i}"] { display: block; }
+.chron:has(input[value="${i}"]:checked) .entry[data-sec="${i}"]:not(:has(~ .entry[data-sec="${i}"])) { border-bottom: 0; }`,
     )
     .join("\n")
 

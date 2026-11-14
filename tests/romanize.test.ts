@@ -50,7 +50,9 @@ assert.equal(ipaLineToHupin("zɑ̃  he ɦo "), "zaon he ɦʊ") // LLM double spa
 assert.equal(cleanLine("你好，world! 上海。"), "你好 上海")
 
 // handler with DeepSeek mocked
-globalThis.fetch = (async (_u: string, init: any) => {
+globalThis.fetch = (async (u: string, init: any) => {
+  if (u.includes("siteverify"))
+    return Response.json({ success: init.body.get("response") === "good" })
   const sent = JSON.parse(init.body).messages[1].content
   assert.equal(sent, "上海话")
   return new Response(
@@ -68,13 +70,15 @@ globalThis.fetch = (async (_u: string, init: any) => {
 const call = (body: any) =>
   onRequestPost({
     request: new Request("http://x", { method: "POST", body: JSON.stringify(body) }),
-    env: { DEEPSEEK_API_KEY: "k" },
+    env: { DEEPSEEK_API_KEY: "k", TURNSTILE_SECRET: "s" },
   })
-const ok = await call({ text: "上海话！\n\n123" })
+const ok = await call({ text: "上海话！\n\n123", token: "good" })
 assert.deepEqual(await ok.json(), [
   { rom: "zaon he ɦʊ", text: "上海话！" },
   { rom: "", text: "123" },
 ])
+assert.equal((await call({ text: "上海话" })).status, 403) // no token
+assert.equal((await call({ text: "上海话", token: "bad" })).status, 403)
 assert.equal((await call({ text: "" })).status, 400)
 assert.equal((await call({ text: "字".repeat(1001) })).status, 400)
 console.log("ok")

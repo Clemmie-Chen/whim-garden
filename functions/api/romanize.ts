@@ -103,16 +103,28 @@ async function askDeepSeek(sentence: string, key: string): Promise<string> {
   return ipa
 }
 
+async function turnstileOk(token: string, secret: string, request: Request): Promise<boolean> {
+  const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    method: "POST",
+    body: new URLSearchParams({
+      secret,
+      response: token,
+      remoteip: request.headers.get("CF-Connecting-IP") ?? "",
+    }),
+  })
+  return ((await r.json()) as any).success === true
+}
+
 export async function onRequestPost({
   request,
   env,
 }: {
   request: Request
-  env: { DEEPSEEK_API_KEY: string }
+  env: { DEEPSEEK_API_KEY: string; TURNSTILE_SECRET: string }
 }) {
-  let text: unknown
+  let text: unknown, token: unknown
   try {
-    text = ((await request.json()) as any)?.text
+    ;({ text, token } = (await request.json()) as any)
   } catch {}
   if (typeof text !== "string" || !text.trim() || text.length > MAX_CHARS)
     return Response.json({ error: `text must be 1-${MAX_CHARS} chars` }, { status: 400 })
@@ -123,8 +135,11 @@ export async function onRequestPost({
   if (lines.length > MAX_LINES)
     return Response.json({ error: `at most ${MAX_LINES} lines` }, { status: 400 })
 
-  if (!env.DEEPSEEK_API_KEY)
-    return Response.json({ error: "DEEPSEEK_API_KEY not set" }, { status: 503 })
+  if (!env.DEEPSEEK_API_KEY || !env.TURNSTILE_SECRET)
+    return Response.json({ error: "DEEPSEEK_API_KEY or TURNSTILE_SECRET not set" }, { status: 503 })
+  // only a real browser that passed Turnstile on the page gets a token; scripts hitting the API directly stop here
+  if (typeof token !== "string" || !(await turnstileOk(token, env.TURNSTILE_SECRET, request)))
+    return Response.json({ error: "人机验证没通过，刷新页面再试" }, { status: 403 })
 
   try {
     // one call per line, so each result stays paired with its own line (the .py dropped everything on a count mismatch)

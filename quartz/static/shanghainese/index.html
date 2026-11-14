@@ -123,6 +123,7 @@ textarea.box::placeholder{color:color-mix(in srgb,var(--ink) 45%,transparent)}
     <section class="blk">
       <h2><label for="src">输入文本</label></h2>
       <textarea class="box" id="src" placeholder="这是普通话&#10;这是第二行"></textarea>
+      <div id="ts"></div>
       <div class="row"><button class="btn tight" id="run">转！</button></div>
     </section>
     <section class="blk">
@@ -220,7 +221,13 @@ textarea.box::placeholder{color:color-mix(in srgb,var(--ink) 45%,transparent)}
 </section>
 </main>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=tsReady" async defer></script>
 <script>
+// Turnstile: the API only answers requests carrying a fresh token. Invisible unless Cloudflare wants a click.
+// localhost gets Cloudflare's always-pass test key, since the real key only works on clemmiechen.cc
+const SITEKEY=location.hostname==="localhost"?"1x00000000000000000000AA":"0x4AAAAAAGAvK6ngw-_VARG9";
+let tsId;
+window.tsReady=()=>{tsId=turnstile.render("#ts",{sitekey:SITEKEY,appearance:"interaction-only"})};
 // demo only: the greyed placeholder output, so the empty tool explains itself without spending an API call
 const STUB = {上:"zaŋ",海:"he",言:"ɦe",话:"wu",这:"ɦə",是:"zy",普:"pu",通:"toŋ",第:"ɖi",二:"ȵi",行:"ɦaŋ",我:"ngu",侬:"noŋ",好:"hɔ",阿:"aʔ",拉:"la"};
 function demo(text){
@@ -232,9 +239,13 @@ function demo(text){
 console.assert(demo("上海言话")[0].rom==="zaŋ he ɦe wu");
 // functions/api/romanize.ts -> [{rom, text}] per line
 async function convert(text){
-  const r=await fetch("/api/romanize",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});
-  if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||r.status);
-  return r.json();
+  const token=tsId!==undefined&&turnstile.getResponse(tsId);
+  if(!token)throw new Error("人机验证还没好，等一歇再点");
+  try{
+    const r=await fetch("/api/romanize",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,token})});
+    if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||r.status);
+    return r.json();
+  }finally{turnstile.reset(tsId)} // a token is single-use: get the next one ready
 }
 
 const $=id=>document.getElementById(id);

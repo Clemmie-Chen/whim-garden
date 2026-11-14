@@ -123,6 +123,9 @@ export async function onRequestPost({
   if (lines.length > MAX_LINES)
     return Response.json({ error: `at most ${MAX_LINES} lines` }, { status: 400 })
 
+  if (!env.DEEPSEEK_API_KEY)
+    return Response.json({ error: "DEEPSEEK_API_KEY not set" }, { status: 503 })
+
   try {
     // one call per line, so each result stays paired with its own line (the .py dropped everything on a count mismatch)
     const out = await Promise.all(
@@ -138,6 +141,7 @@ export async function onRequestPost({
   } catch (e) {
     // 503 not 502: Cloudflare swaps a 502 from Pages on the custom domain for its own "error code: 502" page
     console.error(e)
-    return Response.json({ error: "upstream failed" }, { status: 503 })
+    // the message is only a status or parse error ("deepseek 401"), safe to show and needed to debug from the page
+    return Response.json({ error: String((e as Error).message) }, { status: 503 })
   }
 }

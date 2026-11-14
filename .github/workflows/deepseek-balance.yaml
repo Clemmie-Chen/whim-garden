@@ -1,10 +1,11 @@
-# Daily DeepSeek balance check for /api/romanize. A failed run is the alert: GitHub emails you.
+# DeepSeek balance alerts for /api/romanize. A failed run is the alert: GitHub emails you.
+# Hourly: alert when the balance falls past a ¥10 mark. Daily at 09:00 Beijing: alert while under ¥10.
 # Needs the repo secret DEEPSEEK_API_KEY (Settings → Secrets and variables → Actions).
 name: DeepSeek balance
 
 on:
   schedule:
-    - cron: "0 1 * * *" # 09:00 Beijing time
+    - cron: "7 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -12,14 +13,41 @@ jobs:
     if: ${{ github.repository == 'Clemmie-Chen/whim-garden' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Fail if balance is below MIN_CNY
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/scripts
+
+      # the last ¥10 step seen, carried between runs in the Actions cache
+      # shortcut: if the cache is evicted, that run only records the step and cannot alert on a crossing
+      - uses: actions/cache/restore@v4
+        with:
+          path: last-step
+          key: deepseek-step-${{ github.run_id }}
+          restore-keys: deepseek-step-
+
+      - name: Check balance
+        id: check
         env:
           KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          MIN_CNY: "5"
         run: |
           body=$(curl -sf -H "Authorization: Bearer $KEY" https://api.deepseek.com/user/balance) \
             || { echo "::error::查不到 DeepSeek 余额：key 没配或失效"; exit 1; }
           bal=$(echo "$body" | jq -r '.balance_infos[] | select(.currency=="CNY") | .total_balance')
-          echo "DeepSeek 余额 ¥${bal:-?}"
-          awk -v b="${bal:-0}" -v m="$MIN_CNY" 'BEGIN { exit !(b >= m) }' \
-            || { echo "::error::DeepSeek 余额 ¥${bal:-?}，低于 ¥$MIN_CNY，该充值了"; exit 1; }
+          [ -n "$bal" ] || { echo "::error::DeepSeek 返回里没有人民币余额: $body"; exit 1; }
+          daily=0
+          [ "$(TZ=Asia/Shanghai date +%H)" = 09 ] || [ "${{ github.event_name }}" = workflow_dispatch ] && daily=1
+          out=$(bash .github/scripts/deepseek-balance.sh "$bal" "$(cat last-step 2>/dev/null)" "$daily")
+          echo "$out" | head -1 > last-step
+          echo "DeepSeek 余额 ¥$bal（档位 ¥$(cat last-step)）"
+          echo "alert=$(echo "$out" | sed -n 2p)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache/save@v4
+        with:
+          path: last-step
+          key: deepseek-step-${{ github.run_id }}
+
+      - name: Alert
+        if: ${{ steps.check.outputs.alert != '' }}
+        run: |
+          echo "::error::${{ steps.check.outputs.alert }}"
+          exit 1

@@ -1,6 +1,6 @@
 import test, { describe } from "node:test"
 import assert from "node:assert"
-import { renderTranscludes, pageResources } from "./renderPage"
+import { renderTranscludes, pageResources, detectLang } from "./renderPage"
 import { Root, Element } from "hast"
 import { FullSlug } from "../util/path"
 import { GlobalConfiguration } from "../cfg"
@@ -323,5 +323,16 @@ describe("pageResources", () => {
       !inlineJsServe.script.includes("/quartz/static/contentIndex.json"),
       `expected contentIndex fetch without /quartz/ prefix in serve mode, got: ${inlineJsServe.script}`,
     )
+  })
+})
+
+describe("detectLang", () => {
+  test("Chinese-majority text is zh", () => {
+    assert.strictEqual(detectLang("后现代=对元叙事的怀疑。Lyotard 认为"), "zh")
+  })
+  test("English text and mixed English-heavy text fall back", () => {
+    assert.strictEqual(detectLang("I read, think, take notes, and share my braindumps here."), undefined)
+    assert.strictEqual(detectLang("My mother tongue is Chinese, so the language will be 混合."), undefined)
+    assert.strictEqual(detectLang(undefined), undefined)
   })
 })

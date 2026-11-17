@@ -12,6 +12,8 @@ tags:
 > 这个项目是为了成为你的租房临时大脑 dumper，把临时记忆容量给腾出来。
 >
 > 仓库：https://github.com/Clemmie-Chen/home-rentor
+>
+> 👉 **[打开预览 · 示例数据](/static/home-rentor/)**（纯静态预览，数据是假的、刷新即重置；想真正用起来，按仓库 README「快速开始」clone 到本地跑，配上自己的高德 Key 才能录新地址、算通勤）
 
 ---
 

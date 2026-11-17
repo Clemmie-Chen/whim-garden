@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上海找房地图</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* ============================================================
+           Apple HIG 设计语言（Clarity / Deference / Depth）
+           - 系统色板：blue #007AFF · green #34C759 · red #FF3B30
+                       orange #FF9500 · yellow #FFCC00 · gray #8E8E93 · indigo #5856D6
+           - 材质：半透明面板 + backdrop blur/saturate（毛玻璃），界面退后、内容向前
+           - 层次：发丝线描边 + 柔和大半径阴影营造浮层深度
+           - 排印：SF 系统字体栈，加权与字号分层，负字距标题
+           ============================================================ */
+        :root{
+            --blue:#007AFF;--green:#34C759;--red:#FF3B30;--orange:#FF9500;--yellow:#FFCC00;
+            --gray:#8E8E93;--indigo:#5856D6;
+            --label:#1d1d1f;--label-2:rgba(60,60,67,0.6);--label-3:rgba(60,60,67,0.75);  /* 预览版：原 0.33 对比度不足 WCAG AA */
+            --separator:rgba(60,60,67,0.12);
+            --fill:rgba(120,120,128,0.12);--fill-2:rgba(120,120,128,0.2);
+            --material:rgba(252,252,253,0.78);
+            --shadow-panel:0 10px 34px rgba(0,0,0,0.13),0 1px 3px rgba(0,0,0,0.06);
+            --shadow-card:0 1px 3px rgba(0,0,0,0.07);
+            --shadow-card-hover:0 6px 20px rgba(0,0,0,0.12);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            color: var(--label);
+        }
+        #map { height: 100%; width: 100%; }
+
+        /* 左上：两个独立的浮动材质面板（通勤目的地 / 地铁线） */
+        .left-col{
+            position:absolute;top:12px;left:12px;z-index:1000;width:228px;
+            display:flex;flex-direction:column;gap:10px;
+        }
+        .panel{
+            background:var(--material);
+            backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+            padding:12px 13px;border-radius:14px;
+            border:0.5px solid rgba(0,0,0,0.07);
+            box-shadow:var(--shadow-panel);font-size:12px;
+        }
+        .panel .title{
+            font-size:13px;font-weight:600;letter-spacing:-0.08px;color:var(--label);
+            margin-bottom:8px;display:flex;align-items:center;gap:5px;
+        }
+        .hint{font-size:11px;font-weight:400;color:var(--label-3);cursor:help;}
+        .panel .title .spacer{flex:1;}
+        /* 右上角小操作钮（＋ 添加目的地）*/
+        .mini-btn{
+            width:18px;height:18px;border:none;border-radius:50%;flex-shrink:0;
+            background:var(--fill);color:var(--label-2);font-size:13px;line-height:1;
+            cursor:pointer;padding:0;transition:all 0.12s;
+        }
+        .mini-btn:hover{background:#0062CC;color:#fff;}
+        .mini-btn:active{transform:scale(0.9);}
+        .panel-hint{font-size:11px;color:var(--label-3);}
+        .panel .title .st-chev{font-size:10px;color:var(--label-3);}
+        /* 目的地行：展示态（点击进入编辑）/ 编辑态（输入框） */
+        .dest-row{display:flex;gap:7px;align-items:center;margin-bottom:5px;}
+        .dest-row:last-child{margin-bottom:0;}
+        .dest-row input{
+            flex:1;min-width:0;padding:6px 9px;border:none;border-radius:8px;font-size:12px;outline:none;
+            background:var(--fill);color:var(--label);font-family:inherit;transition:box-shadow 0.15s,background 0.15s;
+        }
+        .dest-row input:focus{background:rgba(255,255,255,0.9);box-shadow:0 0 0 3px rgba(0,122,255,0.25);}
+        .dest-row input::placeholder{color:var(--label-3);}
+        .dest-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+        .dest-view{cursor:pointer;border-radius:8px;padding:5px 7px;margin-left:-7px;margin-right:-7px;transition:background 0.15s;}
+        .dest-view:hover{background:var(--fill);}
+        .dest-name{
+            flex:1;min-width:0;font-size:12px;color:var(--label);
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        }
+        .dest-del{
+            width:18px;height:18px;flex-shrink:0;border:none;border-radius:50%;
+            background:transparent;color:var(--label-3);font-size:14px;line-height:1;
+            cursor:pointer;padding:0;transition:all 0.12s;
+        }
+        .dest-del:hover{background:rgba(255,59,48,0.14);color:var(--red);}
+        /* 地铁线 chip：未选中刻意压灰，选中用线路官方色填充（行内样式），对比拉满 */
+        .line-chips .chips-row{display:flex;flex-wrap:wrap;gap:5px;}
+        .line-chip{
+            font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;
+            border:none;background:var(--fill);color:var(--label-3);
+            cursor:pointer;user-select:none;line-height:1.6;transition:all 0.15s ease;
+        }
+        .line-chip:hover{background:var(--fill-2);color:var(--label-2);}
+        .line-chip:active{transform:scale(0.95);}
+        .line-chip.on{color:#fff;font-weight:700;}
+        /* 高亮线路上前后4站的站名标签 */
+        .hilite-station-tt{
+            background:rgba(255,255,255,0.92);color:var(--label);border:0.5px solid rgba(0,0,0,0.06);
+            font-weight:600;font-size:11px;
+            border-radius:7px;padding:2px 7px;box-shadow:0 2px 10px rgba(0,0,0,0.18);
+            backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+        }
+
+        /* 右侧房源卡片面板 */
+        .cards-panel{
+            position:absolute;top:12px;right:12px;bottom:12px;z-index:1000;
+            width:312px;overflow-y:auto;
+            display:flex;flex-direction:column;gap:9px;
+            /* 整个面板矩形都拦截鼠标事件：滚轮在此区域内只滚列表，绝不缩放地图 */
+            pointer-events:auto;
+            overscroll-behavior:contain;
+            scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.18) transparent;
+        }
+        .cards-panel::-webkit-scrollbar{width:5px;}
+        .cards-panel::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.18);border-radius:100px;}
+        .cards-panel::-webkit-scrollbar-track{background:transparent;}
+        .cards-panel .section-title{
+            font-size:13px;font-weight:600;letter-spacing:-0.08px;color:var(--label);
+            background:var(--material);
+            backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+            padding:8px 12px;border-radius:12px;
+            border:0.5px solid rgba(0,0,0,0.07);
+            box-shadow:var(--shadow-card);flex-shrink:0;
+            /* 常驻：列表滚动时钉在顶部；整条可点击收起/展开 */
+            position:sticky;top:0;z-index:10;
+            display:flex;align-items:center;gap:6px;
+            cursor:pointer;user-select:none;
+        }
+        .section-title .st-stats{flex:1;text-align:right;font-size:11px;font-weight:400;color:var(--label-2);}
+        .section-title .st-stats b{font-weight:600;color:var(--label);font-variant-numeric:tabular-nums;}
+        .section-title .st-chev{font-size:10px;color:var(--label-3);transition:transform 0.15s;}
+        /* 收起态：只留标题栏，面板高度收缩（不再占住整条右侧屏幕） */
+        .cards-panel.collapsed{bottom:auto;}
+        .cards-panel.collapsed>*:not(.section-title){display:none!important;}
+
+        .house-card{
+            background:var(--material);
+            backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+            border-radius:13px;
+            border:0.5px solid rgba(0,0,0,0.07);
+            box-shadow:var(--shadow-card);
+            cursor:pointer;transition:box-shadow 0.2s ease,opacity 0.2s ease;position:relative;flex-shrink:0;
+        }
+        .house-card:hover{box-shadow:var(--shadow-card-hover);}
+        /* 可不看 / 枪毙：整体弱化（不可用态），悬停恢复 */
+        .house-card.card-dim{opacity:0.45;}
+        .house-card.card-dim:hover{opacity:1;}
+        /* 点击地图标记/tooltip 后对应卡片的高亮 */
+        .house-card.card-focus{box-shadow:0 0 0 3px rgba(0,122,255,0.45),var(--shadow-card-hover);opacity:1;}
+
+        .card-header{padding:11px 13px 0;display:flex;align-items:flex-start;gap:8px;}
+        .card-header .card-info{flex:1;min-width:0;}
+        /* 第一块：用户输入的原文（普通文本，逐字保留，点击即编辑） */
+        .card-raw{
+            font-weight:400;font-size:12px;color:var(--label-2);line-height:1.55;
+            white-space:pre-wrap;word-break:break-word;cursor:text;
+            border-radius:6px;padding:1px 4px;margin:-1px -4px;transition:background 0.15s;
+        }
+        .card-raw:hover{background:rgba(0,122,255,0.07);}
+        .raw-edit{
+            width:100%;font-weight:400;font-size:12px;color:var(--label);font-family:inherit;
+            padding:7px 9px;border:none;border-radius:8px;outline:none;line-height:1.55;
+            background:rgba(255,255,255,0.9);box-shadow:0 0 0 3px rgba(0,122,255,0.3);
+        }
+        .edit-hint{font-size:10px;color:var(--label-3);margin-top:4px;}
+        /* 第二块：高德解析到的位置，给用户核对针对不对 */
+        .resolved-loc{font-size:10px;color:var(--label-3);margin-top:6px;}
+        .field-empty{font-size:11px;color:var(--label-3);}
+
+        /* 详情区（始终展开） */
+        .card-detail{display:block;padding:0 13px 11px;}
+
+        .card-commute{margin:8px 0;padding-top:8px;border-top:0.5px solid var(--separator);font-size:11px;color:var(--label-2);}
+        .card-commute .c-row{margin-bottom:2px;}
+        .commute-time{font-weight:600;color:var(--label);font-variant-numeric:tabular-nums;}
+
+        /* 状态下拉（即状态指示器，颜色随状态变） */
+        .status-select{
+            flex:1;min-width:0;padding:6px 7px;border:none;border-radius:8px;
+            font-size:11px;font-weight:600;font-family:inherit;outline:none;cursor:pointer;
+            background:var(--fill);color:var(--label-2);
+            -webkit-appearance:none;appearance:none;transition:background 0.15s;
+        }
+        .status-select:focus{box-shadow:0 0 0 3px rgba(0,122,255,0.25);}
+        .status-select.s-must{background:rgba(255,149,0,0.16);color:#C93400;}
+        .status-select.s-maybe{background:rgba(255,204,0,0.2);color:#946200;}
+        .status-select.s-skip{background:rgba(120,120,128,0.12);color:var(--gray);}
+        .status-select.s-candidate{background:rgba(52,199,89,0.16);color:#248A3D;}
+        .status-select.s-rejected{background:rgba(120,120,128,0.08);color:#AEAEB2;}
+
+        /* 只读字段展示 */
+        .field-viewer{margin-top:7px;}
+        .field-view-row{display:flex;gap:8px;align-items:baseline;margin-bottom:3px;font-size:12px;}
+        .field-view-row label{width:52px;flex-shrink:0;text-align:right;font-size:11px;color:var(--label-2);}
+        .field-view-row span{color:var(--label);word-break:break-all;}
+        .loc-dist{color:var(--label-2);font-size:11px;}
+
+        /* 紧凑底栏：状态下拉 + 图标按钮 */
+        .card-bottom{display:flex;gap:6px;align-items:center;margin-top:9px;}
+        .icon-btn{
+            width:28px;height:28px;flex-shrink:0;border:none;border-radius:8px;
+            background:var(--fill);cursor:pointer;font-size:13px;padding:0;line-height:1;
+            transition:background 0.15s,transform 0.1s;
+        }
+        .icon-btn:hover{background:var(--fill-2);}
+        .icon-btn:active{transform:scale(0.93);}
+        .icon-btn.btn-delete-sm:hover{background:rgba(255,59,48,0.14);}
+        /* 编辑态底栏：保存 / 取消 */
+        .edit-actions{display:flex;gap:6px;margin-top:9px;}
+        .edit-actions button{
+            flex:1;padding:7px 0;border:none;border-radius:8px;font-size:12px;font-weight:600;
+            font-family:inherit;cursor:pointer;color:white;transition:filter 0.15s;
+        }
+        .edit-actions button:hover{filter:brightness(0.94);}
+        .btn-edit-save{background:var(--green);}
+        .btn-cancel{background:var(--fill);color:var(--label);}
+
+        /* 地图元素 */
+        .metro-station-icon{background:transparent;}
+        .station-pill{
+            height:16px;padding:0 6px;border-radius:100px;background:rgba(255,255,255,0.9);
+            border:0.5px solid rgba(0,0,0,0.18);color:var(--label-2);font-size:9px;font-weight:600;
+            display:flex;align-items:center;justify-content:center;white-space:nowrap;opacity:0.88;
+        }
+        .house-tooltip{
+            background:rgba(255,255,255,0.88);color:var(--label);
+            border:0.5px solid rgba(0,0,0,0.07);
+            backdrop-filter:blur(14px) saturate(180%);-webkit-backdrop-filter:blur(14px) saturate(180%);
+            border-radius:9px;padding:4px 9px;font-weight:400;font-size:10.5px;line-height:1.55;
+            box-shadow:0 4px 16px rgba(0,0,0,0.16);max-width:300px;text-align:center;
+            font-variant-numeric:tabular-nums;
+        }
+        /* tooltip 内部信息层次 */
+        .house-tooltip .tt-hd{font-size:11.5px;font-weight:600;}              /* 小区 · 月租 */
+        .house-tooltip .tt-sub{font-size:10px;color:var(--label-2);}          /* 面积/户型/楼层/电梯/备注 */
+        .house-tooltip .tt-metro{font-size:10px;color:var(--label-2);}        /* 最近地铁：距离 > 站名 > 线路 */
+        .house-tooltip .tt-metro .tt-em{font-weight:650;color:var(--label);font-size:10.5px;}
+        .house-tooltip .tt-go{font-size:10px;color:var(--label-2);}           /* 通勤：骑车 > 地铁 > 开车 */
+        .house-tooltip .tt-bike{font-weight:650;color:var(--label);font-size:10.5px;}
+        .house-tooltip .tt-metroT{font-weight:500;color:var(--label-2);}
+        .house-tooltip .tt-drive{font-weight:400;color:var(--label-3);}
+        /* tooltip 按状态分层：要看的永远压在不看的上面；悬停时临时浮到最顶 */
+        .house-tooltip{z-index:30;}
+        .house-tooltip.tt-must{z-index:60;}
+        .house-tooltip.tt-maybe{z-index:55;}
+        .house-tooltip.tt-candidate{z-index:50;}
+        .house-tooltip.tt-skip{z-index:20;}
+        .house-tooltip.tt-rejected{z-index:15;}
+        .house-tooltip:hover{z-index:100;}
+        .house-tooltip.tt-front{z-index:200;}   /* 点击后置顶，样式不变 */
+        /* 缩放自适应：地图缩小时 tooltip 只显示第一行（缩略态），点击置顶的那个展开全文 */
+        .zoom-compact .house-tooltip .tt-more{display:none;}
+        .zoom-compact .house-tooltip.tt-front .tt-more{display:inline;}
+        /* tooltip 删除键：悬停才出现 + 点击有确认框，双重防误触 */
+        .house-tooltip .tt-del{
+            position:absolute;top:-7px;right:-7px;width:17px;height:17px;border-radius:50%;
+            background:rgba(28,28,30,0.78);color:#fff;font-size:11px;line-height:17px;text-align:center;
+            cursor:pointer;opacity:0;transition:opacity 0.15s;box-shadow:0 1px 5px rgba(0,0,0,0.3);
+        }
+        .house-tooltip:hover .tt-del{opacity:1;}
+        .house-tooltip .tt-del:hover{background:var(--red);}
+        /* tooltip 配色与卡片状态色一一对应（Apple 系统色淡墨水底） */
+        .house-tooltip.tt-must{background:rgba(255,240,219,0.92);border-color:rgba(255,149,0,0.45);color:#C93400;}
+        .house-tooltip.tt-maybe{background:rgba(255,249,216,0.92);border-color:rgba(255,204,0,0.5);color:#946200;}
+        .house-tooltip.tt-skip{background:rgba(242,242,247,0.82);border-color:rgba(142,142,147,0.35);color:var(--gray);font-weight:400;font-size:10px;}
+        .house-tooltip.tt-candidate{background:rgba(228,248,234,0.92);border-color:rgba(52,199,89,0.45);color:#248A3D;}
+        .house-tooltip.tt-rejected{background:rgba(242,242,247,0.75);border-color:rgba(142,142,147,0.25);color:#AEAEB2;font-weight:400;font-size:10px;}
+        .house-tooltip.tt-rejected .tt-hd{text-decoration:line-through;color:#AEAEB2;}
+        .house-tooltip.tt-must.leaflet-tooltip-top:before{border-top-color:#FF9500;}
+        .house-tooltip.tt-maybe.leaflet-tooltip-top:before{border-top-color:#FFCC00;}
+        .house-tooltip.tt-skip.leaflet-tooltip-top:before{border-top-color:#8E8E93;}
+        .house-tooltip.tt-candidate.leaflet-tooltip-top:before{border-top-color:#34C759;}
+        .house-tooltip.tt-rejected.leaflet-tooltip-top:before{border-top-color:#C7C7CC;}
+        /* 同坐标堆叠时 tooltip 会朝 bottom/right/left 展开，箭头同步着色 */
+        .house-tooltip.tt-must.leaflet-tooltip-bottom:before{border-bottom-color:#FF9500;}
+        .house-tooltip.tt-maybe.leaflet-tooltip-bottom:before{border-bottom-color:#FFCC00;}
+        .house-tooltip.tt-skip.leaflet-tooltip-bottom:before{border-bottom-color:#8E8E93;}
+        .house-tooltip.tt-candidate.leaflet-tooltip-bottom:before{border-bottom-color:#34C759;}
+        .house-tooltip.tt-rejected.leaflet-tooltip-bottom:before{border-bottom-color:#C7C7CC;}
+        .house-tooltip.tt-must.leaflet-tooltip-right:before{border-right-color:#FF9500;}
+        .house-tooltip.tt-maybe.leaflet-tooltip-right:before{border-right-color:#FFCC00;}
+        .house-tooltip.tt-skip.leaflet-tooltip-right:before{border-right-color:#8E8E93;}
+        .house-tooltip.tt-candidate.leaflet-tooltip-right:before{border-right-color:#34C759;}
+        .house-tooltip.tt-rejected.leaflet-tooltip-right:before{border-right-color:#C7C7CC;}
+        .house-tooltip.tt-must.leaflet-tooltip-left:before{border-left-color:#FF9500;}
+        .house-tooltip.tt-maybe.leaflet-tooltip-left:before{border-left-color:#FFCC00;}
+        .house-tooltip.tt-skip.leaflet-tooltip-left:before{border-left-color:#8E8E93;}
+        .house-tooltip.tt-candidate.leaflet-tooltip-left:before{border-left-color:#34C759;}
+        .house-tooltip.tt-rejected.leaflet-tooltip-left:before{border-left-color:#C7C7CC;}
+        /* 地铁站 tooltip：低调隐蔽，和房子 tooltip 明显区分 */
+        .metro-station-tt{
+            background:rgba(255,255,255,0.5);color:var(--label-3);border:none;
+            border-radius:5px;padding:0 5px;font-weight:400;font-size:9px;
+            box-shadow:none;text-align:center;
+        }
+        .metro-station-tt.leaflet-tooltip-top:before,
+        .metro-station-tt.leaflet-tooltip-bottom:before,
+        .metro-station-tt.leaflet-tooltip-left:before,
+        .metro-station-tt.leaflet-tooltip-right:before{display:none;}
+        .dest-marker-tooltip{
+            background:rgba(28,28,30,0.78);color:white;border:none;
+            backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+            border-radius:7px;padding:2px 8px;font-size:11px;font-weight:500;
+            box-shadow:0 3px 12px rgba(0,0,0,0.25);
+        }
+        .t1{color:var(--blue);}.t2{color:var(--indigo);}.sep{color:var(--label-3);margin:0 3px;}
+
+        /* 筛选/排序工具栏 */
+        .filter-bar{
+            background:var(--material);
+            backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+            border-radius:12px;padding:9px 10px;
+            border:0.5px solid rgba(0,0,0,0.07);
+            box-shadow:var(--shadow-card);
+            flex-shrink:0;display:flex;flex-direction:column;gap:7px;
+        }
+        .filter-bar .f-chips{display:flex;flex-wrap:wrap;gap:5px;}
+        .f-chip{
+            font-size:11px;font-weight:600;padding:3px 9px;border-radius:100px;
+            border:none;color:var(--label-2);background:var(--fill);cursor:pointer;user-select:none;
+            transition:all 0.15s ease;
+        }
+        .f-chip:hover{background:var(--fill-2);}
+        .f-chip:active{transform:scale(0.95);}
+        .f-chip.on{background:var(--blue);color:#fff;}
+        .f-chip.on.fc-must{background:var(--orange);color:#fff;}
+        .f-chip.on.fc-maybe{background:var(--yellow);color:#7a5901;}
+        .f-chip.on.fc-skip{background:var(--gray);color:#fff;}
+        .f-chip.on.fc-candidate{background:var(--green);color:#fff;}
+        .f-chip.on.fc-rejected{background:#AEAEB2;color:#fff;}
+        .filter-bar .f-row2{display:flex;gap:6px;align-items:center;}
+        .sort-select{
+            flex:1;min-width:0;padding:6px 8px;border:none;border-radius:8px;
+            font-size:11px;font-weight:500;font-family:inherit;outline:none;cursor:pointer;
+            background:var(--fill);color:var(--label);
+            -webkit-appearance:none;appearance:none;transition:background 0.15s;
+        }
+        .sort-select:hover{background:var(--fill-2);}
+        .sort-select:focus{box-shadow:0 0 0 3px rgba(0,122,255,0.25);}
+
+        /* 输入卡片：虚线空框暗示"在这里添加新房源"；输入文字后浮现发送键（iMessage 式 ↑） */
+        .input-card{
+            background:rgba(252,252,253,0.55);
+            backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);
+            border-radius:12px;padding:6px 7px 6px 12px;
+            border:1.5px dashed rgba(60,60,67,0.28);
+            box-shadow:none;flex-shrink:0;
+            display:flex;gap:6px;align-items:center;
+            transition:border-color 0.2s ease,background 0.2s ease,box-shadow 0.2s ease;
+        }
+        .input-card:hover{border-color:rgba(60,60,67,0.45);}
+        .input-card:focus-within{
+            border-color:var(--blue);border-style:solid;
+            background:var(--material);box-shadow:var(--shadow-card);
+        }
+        .input-card input{
+            flex:1;min-width:0;padding:6px 0;border:none;outline:none;font-size:13px;
+            background:transparent;font-family:inherit;color:var(--label);
+        }
+        .input-card input::placeholder{color:var(--label-3);font-size:12px;}
+        .input-card button{
+            display:none;
+            width:26px;height:26px;border-radius:50%;border:none;
+            background:var(--blue);color:white;font-size:14px;font-weight:700;cursor:pointer;
+            flex-shrink:0;line-height:1;transition:background 0.15s,transform 0.1s;
+        }
+        .input-card.has-text button{display:block;}
+        .input-card button:hover{background:#0071E3;}
+        .input-card button:active{transform:scale(0.92);}
+        .input-card button:disabled{background:var(--fill-2);cursor:not-allowed;}
+
+        .loading-overlay{
+            position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+            background:rgba(28,28,30,0.78);color:white;padding:14px 26px;
+            backdrop-filter:blur(16px) saturate(180%);-webkit-backdrop-filter:blur(16px) saturate(180%);
+            border-radius:14px;z-index:2000;font-size:14px;font-weight:500;display:none;
+            box-shadow:0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        /* 手机适配：左侧面板收窄；房源列表变成底部抽屉（配合点标题收起/展开） */
+        @media (max-width:600px){
+            .left-col{width:min(190px,52vw);}
+            .cards-panel{
+                top:auto;bottom:10px;left:10px;right:10px;width:auto;
+                max-height:55vh;
+            }
+            .cards-panel.collapsed{bottom:10px;top:auto;}
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <!-- 左上：通勤目的地 + 地铁线（两个独立面板） -->
+    <div class="left-col">
+        <div class="panel">
+            <div class="title">📍 通勤目的地<span class="spacer"></span><button class="mini-btn" id="destAddBtn" title="添加工作地" onclick="startAddDest()">＋</button></div>
+            <div id="destList"></div>
+        </div>
+        <div class="panel" id="metroPanel" style="display:none">
+            <div class="title" style="cursor:pointer" title="点击展开 / 收起全部线路" onclick="toggleMetroExpand()">🚇 地铁线 <span class="hint" onclick="event.stopPropagation()" title="点亮一条线：在地图上高亮整条走线，并标注离每个工作地最近站的前后 4 站">ⓘ</span><span class="spacer"></span><span class="st-chev" id="metroChev">▸</span></div>
+            <div id="lineChips" class="line-chips"></div>
+        </div>
+    </div>
+
+    <!-- 右侧：房源卡片 -->
+    <div class="cards-panel" id="cardsPanel">
+        <div class="section-title" id="listHeader" title="点击收起 / 展开列表" onclick="toggleListCollapse()">
+            <span>🏠 房源列表</span>
+            <span class="st-stats" id="houseStats"></span>
+            <span class="st-chev" id="listChev">▾</span>
+        </div>
+        <div class="filter-bar">
+            <div class="f-chips" id="statusChips"></div>
+            <div class="f-row2">
+                <select id="sortSelect" class="sort-select" onchange="setSort(this.value)">
+                    <option value="default">排序：状态 + 最新录入</option>
+                    <option value="rent">排序：月租 低→高</option>
+                    <option value="area">排序：面积 大→小</option>
+                    <option value="commute">排序：通勤 短→长</option>
+                </select>
+                <button class="icon-btn" title="导出数据 (JSON)" onclick="exportData()">⤓</button>
+                <button class="icon-btn" title="导入数据 (JSON)" onclick="document.getElementById('importFile').click()">⤒</button>
+                <input type="file" id="importFile" accept="application/json,.json" style="display:none" onchange="importData(this)">
+            </div>
+        </div>
+        <div class="input-card" id="inputCard">
+            <input type="text" id="mainInput" placeholder="添加新房源：小区 价格 户型 楼层…（回车录入）">
+            <button id="addBtn" title="录入" onclick="addHouse()">↑</button>
+        </div>
+    </div>
+
+    <!-- 底部：主输入框 （已移至卡片面板） -->
+    <div id="loading" class="loading-overlay">正在计算通勤...</div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/eviltransform@0.2.2/transform.min.js"></script>
+
+    <!-- 静态预览：没有 server.py，用 fetch 垫片把 api/* 指到示例数据 -->
+    <style>
+        .leaflet-container{background:#fff;} .leaflet-tile-pane{filter:grayscale(1);opacity:.5;}  /* CARTO 现需 Key：OSM 瓦片去色+淡化，近似原版 Positron 底图 */
+        #preview-bar{position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:2000;max-width:calc(100% - 32px);padding:8px 14px;border-radius:10px;background:rgba(28,28,30,.88);color:#fff;font:13px/1.4 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.18)}
+        #preview-bar a{color:#64D2FF}
+        #preview-bar button{margin-left:8px;background:none;border:0;color:#aaa;cursor:pointer;font-size:14px}
+        #preview-bar.warn{background:#FF9500}
+    </style>
+    <div id="preview-bar" role="status">👀 预览版 · 示例数据，刷新即重置。想自己用？<a href="https://github.com/Clemmie-Chen/home-rentor#快速开始" target="_blank" rel="noopener">clone 下来本地跑</a><button aria-label="关闭" onclick="this.parentNode.remove()">✕</button></div>
+    <script>
+    (()=>{
+        // 首次打开默认点亮 9/10/12 号线（示例房源都在这几条线上）
+        try{if(!localStorage.getItem('home-mapper-highlight-lines'))localStorage.setItem('home-mapper-highlight-lines','["9","10","12"]');}catch(e){}
+        const realFetch=window.fetch.bind(window);
+        const json=o=>new Response(JSON.stringify(o),{headers:{'Content-Type':'application/json'}});
+        function deployHint(){
+            const bar=document.getElementById('preview-bar');if(!bar)return;
+            bar.classList.add('warn');
+            bar.firstChild.textContent='⚠️ 预览版无法定位新地址/算通勤（需要你自己的高德 Key）。';
+        }
+        window.fetch=(input,init)=>{
+            const url=typeof input==='string'?input:input.url;
+            if(/(^|\/)api\/data$/.test(url))
+                return (init&&init.method==='POST')?Promise.resolve(json({ok:true})):realFetch('data.sample.json');
+            if(/(^|\/)api\/shared-houses/.test(url))return Promise.resolve(json([]));
+            // 示例目的地启动时会被地理编码，给它固定坐标（高德返回 GCJ-02），避免一打开就弹警告
+            if(url.includes('api/amap/v3/place/text')&&url.includes(encodeURIComponent('漕河泾开发区'))){
+                const g=eviltransform.wgs2gcj(31.1725,121.3933);
+                return Promise.resolve(json({status:'1',pois:[{name:'漕河泾开发区',address:'徐汇区',location:`${g.lng},${g.lat}`}]}));
+            }
+            if(/(^|\/)api\/amap\//.test(url)){console.warn('[preview] 高德请求已拦截:',url);deployHint();return Promise.resolve(json({status:'0',errcode:-1,info:'preview'}));}
+            return realFetch(input,init);
+        };
+    })();
+    </script>
+    <script>
+        // ========== 常量 ==========
+        const SHANGHAI_CENTER=[31.172,121.395];  // 预览版：对准示例房源所在的西南片区
+        const DEST_COLORS=['#007AFF','#5856D6'];  // Apple systemBlue / systemIndigo
+        const DEST_STORAGE_KEY='home-mapper-destinations';
+        const HOUSE_STORAGE_KEY='home-mapper-houses';
+        const MODE_ICONS={metro:'🚇',bike:'🚲',drive:'🚗'};
+        const STATUS_OPTIONS=['must','maybe','skip','rejected','candidate'];
+        const STATUS_LABELS={must:'一定要看',maybe:'可看',skip:'可不看',rejected:'枪毙',candidate:'看了-候选'};
+        const STATUS_EMOJI={must:'🔥',maybe:'🟡',skip:'⚪',rejected:'✕',candidate:'🟢'};
+        // Apple 系统色；rejected 刻意用浅灰（不可用态，不引人注目）
+        const STATUS_COLORS={must:'#FF9500',maybe:'#FFCC00',skip:'#8E8E93',rejected:'#C7C7CC',candidate:'#34C759'};
+
+        const METRO_COLORS={'1':'#E4002B','2':'#97D700','3':'#FFD100','4':'#532E8C','5':'#A6217E','6':'#D9027D','7':'#F37021','8':'#0094D8','9':'#71C5E8','10':'#C5ABD4','11':'#87352E','12':'#007A60','13':'#E796C1','14':'#616020','15':'#C9A96E','16':'#32B1A8','17':'#BC7D29','18':'#C4984F','default':'#888888'};
+
+        // ========== 地图 ==========
+        const map=L.map('map',{preferCanvas:true}).setView(SHANGHAI_CENTER,13);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,updateWhenZooming:false,updateWhenIdle:true,attribution:'&copy; OpenStreetMap'}).addTo(map);
+        L.control.scale({metric:true,imperial:false,position:'bottomleft'}).addTo(map);
+        const metroLinesLayer=L.layerGroup().addTo(map);
+        const metroStationsLayer=L.layerGroup().addTo(map);
+        const destinationsLayer=L.layerGroup().addTo(map);
+        const highlightLinesLayer=L.layerGroup().addTo(map);     // 高亮的整条线路
+        const highlightStationsLayer=L.layerGroup().addTo(map);  // 高亮线上前后4站
+        const housesLayer=L.layerGroup().addTo(map);
+        let metroStations=[];          // {name,lat,lon,lines} —— 算每套房最近的地铁站
+        let metroLineData=new Map();   // ref -> {ref,colour,ways:[[ [lat,lng]...]],stations:[{name,lat,lon}](有序)}
+        let destCoords=[];             // 目的地 WGS 坐标 [{lat,lng}|null]
+        map.on('movestart zoomstart',()=>{metroStationsLayer.eachLayer(l=>l.closeTooltip());});
+        // 缩放自适应：低于该级别时房源 tooltip 进入缩略态（只显示第一行）
+        const ZOOM_FULL_TT=15;
+        function applyTooltipZoomMode(){map.getContainer().classList.toggle('zoom-compact',map.getZoom()<ZOOM_FULL_TT);}
+        map.on('zoomend',applyTooltipZoomMode);applyTooltipZoomMode();
+
+        // ========== 持久化 ==========
+        // localStorage 是本地缓存；服务器 data.json 是多设备共享的数据源。
+        // 每次写入本地后 debounce 推送到服务器；启动时先从服务器拉取。
+        function getDestinations(){const r=localStorage.getItem(DEST_STORAGE_KEY);return r?JSON.parse(r):[null,null];}
+        function setDestinations(arr){localStorage.setItem(DEST_STORAGE_KEY,JSON.stringify(arr));pushServerData();}
+        const HILITE_KEY='home-mapper-highlight-lines';
+        function getHilite(){const r=localStorage.getItem(HILITE_KEY);return r?new Set(JSON.parse(r)):new Set();}
+        function setHilite(s){localStorage.setItem(HILITE_KEY,JSON.stringify([...s]));}
+        function getHouses(){const r=localStorage.getItem(HOUSE_STORAGE_KEY);const houses=r?JSON.parse(r):[];return houses.map(normalizeHouse);}
+        function saveHouses(houses){localStorage.setItem(HOUSE_STORAGE_KEY,JSON.stringify(houses));pushServerData();}
+
+        // ========== 服务器同步（手机/电脑共享一份数据） ==========
+        let _syncTimer=null;
+        function pushServerData(){
+            clearTimeout(_syncTimer);
+            _syncTimer=setTimeout(async()=>{
+                try{
+                    await fetch('api/data',{method:'POST',headers:{'Content-Type':'application/json'},
+                        body:JSON.stringify({
+                            houses:JSON.parse(localStorage.getItem(HOUSE_STORAGE_KEY)||'[]'),
+                            destinations:getDestinations(),
+                            updated_at:new Date().toISOString()
+                        })});
+                }catch(e){console.warn('同步到服务器失败（稍后修改会再试）:',e);}
+            },400);
+        }
+        async function loadServerData(){
+            try{
+                const r=await fetch('api/data',{cache:'no-store'});
+                if(!r.ok)return;
+                const d=await r.json();
+                const serverHouses=Array.isArray(d.houses)?d.houses:[];
+                const localHouses=getHouses();
+                if(serverHouses.length){
+                    // 服务器为准（带着其他设备的修改）
+                    localStorage.setItem(HOUSE_STORAGE_KEY,JSON.stringify(serverHouses));
+                    if(Array.isArray(d.destinations)&&d.destinations.some(Boolean))
+                        localStorage.setItem(DEST_STORAGE_KEY,JSON.stringify(d.destinations));
+                }else if(localHouses.length){
+                    pushServerData();   // 服务器还是空的：把本机已有数据推上去（首次迁移）
+                }
+            }catch(e){console.warn('服务器数据加载失败，使用本地缓存:',e);}
+        }
+
+        // ========== 视图状态（筛选 + 排序） ==========
+        const VIEW_KEY='home-mapper-view';
+        function getViewState(){const r=localStorage.getItem(VIEW_KEY);return r?JSON.parse(r):{filter:'all',sort:'default'};}
+        function setViewState(v){localStorage.setItem(VIEW_KEY,JSON.stringify(v));}
+        function setFilter(f){const v=getViewState();v.filter=f;setViewState(v);renderAllHouses();}
+        function setSort(s){const v=getViewState();v.sort=s;setViewState(v);renderAllHouses();}
+        // 点击列表头：收起/展开整个列表（状态持久化）
+        function toggleListCollapse(){
+            const v=getViewState();v.collapsed=!v.collapsed;setViewState(v);applyListCollapse();
+        }
+        function applyListCollapse(){
+            const on=!!getViewState().collapsed;
+            document.getElementById('cardsPanel').classList.toggle('collapsed',on);
+            document.getElementById('listChev').textContent=on?'▸':'▾';
+        }
+        function minCommute(h){let best=Infinity;(h.commute||[]).forEach(c=>{if(c&&c.metro>0)best=Math.min(best,c.metro);});return best;}
+        // 默认排序的状态优先级：一定要看 > 可看 > 未设置 > 可不看 > 看了-候选 > 看了-枪毙
+        const STATUS_RANK={must:0,maybe:1,'':2,skip:3,candidate:4,rejected:5};
+        // 当前可见房源：[{h, idx}]，idx 是在存储数组里的真实下标（编辑/删除用）
+        function visibleHouses(){
+            const v=getViewState();
+            let list=getAllHouses().map((h,idx)=>({h,idx}));
+            if(v.filter&&v.filter!=='all')list=list.filter(e=>(e.h.status||'')===v.filter);
+            const num=x=>{const n=parseFloat(x);return isNaN(n)?null:n;};
+            if(v.sort==='rent')list.sort((a,b)=>(num(field(a.h,'月租'))??Infinity)-(num(field(b.h,'月租'))??Infinity));
+            else if(v.sort==='area')list.sort((a,b)=>(num(field(b.h,'面积'))??-1)-(num(field(a.h,'面积'))??-1));
+            else if(v.sort==='commute')list.sort((a,b)=>minCommute(a.h)-minCommute(b.h));
+            else list.sort((a,b)=>{ // 默认：状态优先级 → 同状态内录入越新越前（idx 越大越新）
+                const ra=STATUS_RANK[a.h.status||'']??2,rb=STATUS_RANK[b.h.status||'']??2;
+                if(ra!==rb)return ra-rb;
+                return b.idx-a.idx;
+            });
+            return list;
+        }
+        function renderStatusChips(){
+            const box=document.getElementById('statusChips');if(!box)return;
+            const houses=getHouses();const v=getViewState();
+            const counts={all:houses.length};
+            STATUS_OPTIONS.forEach(s=>counts[s]=0);
+            houses.forEach(h=>{if(counts[h.status]!==undefined)counts[h.status]++;});
+            const defs=[['all','全部'],...STATUS_OPTIONS.map(s=>[s,`${STATUS_EMOJI[s]} ${STATUS_LABELS[s]}`])];
+            box.innerHTML=defs.map(([k,label])=>
+                `<span class="f-chip${v.filter===k?' on fc-'+k:''}" onclick="setFilter('${k}')">${label} ${counts[k]}</span>`).join('');
+        }
+
+        // ========== 数据导出 / 导入 ==========
+        function exportData(){
+            const data={version:1,exported_at:new Date().toISOString(),destinations:getDestinations(),houses:getHouses()};
+            const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+            const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+            a.download=`home-mapper-${new Date().toISOString().slice(0,10)}.json`;
+            a.click();URL.revokeObjectURL(a.href);
+        }
+        async function importData(input){
+            const f=input.files&&input.files[0];if(!f)return;
+            try{
+                const data=JSON.parse(await f.text());
+                const incoming=Array.isArray(data)?data:(data.houses||[]);
+                if(!Array.isArray(incoming))throw new Error('文件里没有房源数组');
+                const houses=getHouses();
+                const seen=new Set(houses.map(h=>h.raw||h.name));
+                let n=0;
+                for(const h of incoming){
+                    const k=h.raw||h.name;
+                    if(!k||seen.has(k)||h.lat==null||h.lng==null)continue;
+                    houses.push(normalizeHouse(h));seen.add(k);n++;
+                }
+                saveHouses(houses);
+                if(data.destinations&&!getDestinations().some(Boolean)){setDestinations(data.destinations);initDestinations();}
+                renderAllHouses();
+                alert(`导入 ${n} 条房源（跳过重复/无效 ${incoming.length-n} 条）`);
+            }catch(e){alert('导入失败: '+e.message);}
+            input.value='';
+        }
+
+        // ========== 飞书导入房源（自动转为本地，一次性的） ==========
+        async function loadSharedHouses(){
+            try{
+                const resp=await fetch('api/shared-houses');
+                if(!resp.ok)return;
+                const data=await resp.json();
+                if(!data.length)return;
+
+                const houses=getHouses();
+                const existingNames=new Set(houses.map(h=>h.name));
+                let imported=0;
+
+                for(const sh of data){
+                    const name=sh.name||sh.address;
+                    if(existingNames.has(name))continue;
+
+                    try{
+                        const amapResult=await amapGeocode(sh.address||sh.name);
+                        const wgs=gcj2wgs(amapResult.lat,amapResult.lng);
+                        const commute=await calcCommute(wgs.lat,wgs.lng);
+
+                        houses.push({
+                            raw:sh.source||sh.address||name,
+                            name:amapResult.name||name,
+                            addr:sh.address||name,
+                            lat:wgs.lat,lng:wgs.lng,
+                            fields:sh.fields||{},
+                            commute:commute,
+                            status:'maybe'
+                        });
+                        existingNames.add(name);
+                        imported++;
+                    }catch(e){console.log('Shared house geocode failed:',name,e);}
+                }
+
+                if(imported){
+                    saveHouses(houses);
+                    console.log(`导入了 ${imported} 条房源（已转为本地）`);
+                    renderAllHouses();
+                }
+            }catch(e){console.error('导入共享房源失败:',e);}
+        }
+
+        function getAllHouses(){
+            return getHouses();
+        }
+
+        // ========== 目的地 ==========
+        let destNames=[null,null];   // 高德解析出的名称（展示态用）
+        let destEditing=-1;          // 正在编辑的槽位
+
+        // 渲染目的地列表：默认只展示已添加的（展示态，点击编辑、行内×删除）；
+        // 空槽位不渲染输入框，由右上角 ＋ 触发添加
+        let destAdding=false;
+        function renderDestPanel(){
+            const dests=getDestinations();
+            const box=document.getElementById('destList');if(!box)return;
+            const emptyIdx=dests.findIndex(d=>!d);
+            const addBtn=document.getElementById('destAddBtn');
+            if(addBtn)addBtn.style.display=(emptyIdx>=0&&!destAdding)?'':'none';   // 槽位满了或正在添加时隐藏 ＋
+            const rows=[];
+            dests.forEach((d,i)=>{
+                const c=DEST_COLORS[i];
+                const editing=destEditing===i||(destAdding&&i===emptyIdx);
+                if(!d&&!editing)return;   // 空槽位默认不占地方
+                if(editing){
+                    rows.push(`<div class="dest-row"><span class="dest-dot" style="background:${c}"></span>`+
+                        `<input type="text" id="destIn-${i}" value="${escapeHtml(d||'')}" placeholder="工作地（回车确认，Esc 取消）"`+
+                        ` onkeydown="destKey(event,${i})" onblur="destBlur(event,${i})"></div>`);
+                    return;
+                }
+                const name=destNames[i]||d;
+                rows.push(`<div class="dest-row dest-view" title="点击编辑" onclick="editDest(${i})">`+
+                    `<span class="dest-dot" style="background:${c}"></span>`+
+                    `<span class="dest-name">${escapeHtml(name)}</span>`+
+                    `<button class="dest-del" title="删除" onclick="event.stopPropagation();removeDest(${i})">×</button></div>`);
+            });
+            if(!rows.length)rows.push(`<div class="panel-hint">点右上角 ＋ 添加工作地</div>`);
+            box.innerHTML=rows.join('');
+            const focusIdx=destEditing>=0?destEditing:(destAdding?emptyIdx:-1);
+            if(focusIdx>=0){
+                const el=document.getElementById(`destIn-${focusIdx}`);
+                if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}
+            }
+        }
+        function startAddDest(){destAdding=true;renderDestPanel();}
+        function editDest(i){destEditing=i;renderDestPanel();}
+        function destKey(e,i){
+            if(e.key==='Enter'){e.preventDefault();e.target.blur();}                       // blur 里统一保存
+            else if(e.key==='Escape'){e.preventDefault();const d=getDestinations();e.target.value=d[i]||'';e.target.blur();}
+        }
+        async function destBlur(e,i){
+            const val=e.target.value.trim();
+            const dests=getDestinations();const cur=dests[i]||'';
+            destEditing=-1;destAdding=false;
+            if(val===cur){renderDestPanel();return;}   // 没改：退出编辑即可
+            dests[i]=val||null;setDestinations(dests);destGcjCache=null;
+            const ld=document.getElementById('loading');
+            ld.textContent=val?'正在解析工作地...':'正在更新...';ld.style.display='block';
+            try{await markDestinations();await refreshAllCommutes();}
+            finally{ld.style.display='none';ld.textContent='正在计算通勤...';}
+        }
+        async function removeDest(i){
+            const dests=getDestinations();if(!dests[i])return;
+            dests[i]=null;setDestinations(dests);destGcjCache=null;destEditing=-1;
+            const ld=document.getElementById('loading');
+            ld.textContent='正在更新...';ld.style.display='block';
+            try{await markDestinations();await refreshAllCommutes();}
+            finally{ld.style.display='none';ld.textContent='正在计算通勤...';}
+        }
+        async function markDestinations(){
+            destinationsLayer.clearLayers();const dests=getDestinations();destCoords=[];destNames=[];const gcjArr=[];
+            for(let i=0;i<dests.length;i++){const addr=dests[i];if(!addr||!addr.trim()){destCoords.push(null);destNames.push(null);gcjArr.push(null);continue;}
+                try{const coords=await amapGeocode(addr);const wgs=gcj2wgs(coords.lat,coords.lng);destCoords.push({lat:wgs.lat,lng:wgs.lng});gcjArr.push(coords);destNames.push(coords.name||addr);
+                    L.circleMarker([wgs.lat,wgs.lng],{radius:6,fillColor:DEST_COLORS[i],color:'#fff',weight:2,opacity:1,fillOpacity:0.9})
+                     .bindTooltip(coords.name||addr,{permanent:true,direction:'top',offset:[0,-8],className:'dest-marker-tooltip'}).addTo(destinationsLayer);
+                }catch(e){destCoords.push(null);destNames.push(addr+'（解析失败，点击重填）');gcjArr.push(null);}
+            }destGcjCache=gcjArr;
+            renderDestPanel();renderLineChips();renderHighlights();
+        }
+        function initDestinations(){
+            renderDestPanel();
+            markDestinations();
+        }
+
+        // ========== 高德 API ==========
+        async function amapGeocode(address){
+            const u=`api/amap/v3/place/text?keywords=${encodeURIComponent(address)}&city=上海`;
+            const d=await(await fetch(u)).json();
+            // 优先取名字包含查询词的 POI（"平吉二村"搜出来第一个可能是隔壁"莲花新城"）
+            if(d.status==='1'&&d.pois?.length){const p=d.pois.find(x=>(x.name||'').includes(address))||d.pois[0];const[lng,lat]=p.location.split(',');return{lng:parseFloat(lng),lat:parseFloat(lat),name:p.name,address:p.address};}
+            const g=`api/amap/v3/geocode/geo?address=${encodeURIComponent(address)}&city=上海`;
+            const gd=await(await fetch(g)).json();
+            if(gd.status!=='1'||!gd.geocodes?.length)throw new Error(`无法解析:${address}`);
+            const[lng,lat]=gd.geocodes[0].location.split(',');return{lng:parseFloat(lng),lat:parseFloat(lat),address:gd.geocodes[0].formatted_address};
+        }
+        async function getTransitTime(o,d){const u=`api/amap/v3/direction/transit/integrated?origin=${o.lng},${o.lat}&destination=${d.lng},${d.lat}&city=上海`;const r=await(await fetch(u)).json();if(r.status==='1'&&r.route?.transits?.length)return Math.round(parseInt(r.route.transits[0].duration)/60);return -1;}
+        async function getDrivingTime(o,d){const u=`api/amap/v3/direction/driving?origin=${o.lng},${o.lat}&destination=${d.lng},${d.lat}`;const r=await(await fetch(u)).json();if(r.status==='1'&&r.route?.paths?.length)return Math.round(parseInt(r.route.paths[0].duration)/60);return -1;}
+        async function getBicyclingTime(o,d){const u=`api/amap/v4/direction/bicycling?origin=${o.lng},${o.lat}&destination=${d.lng},${d.lat}`;const r=await(await fetch(u)).json();if(r.errcode===0&&r.data?.paths?.length)return Math.round(parseInt(r.data.paths[0].duration)/60);return -1;}
+        function gcj2wgs(a,b){const r=eviltransform.gcj2wgs(a,b);return{lat:r.lat,lng:r.lng};}
+        function formatTime(m){return m===-1||m===null?'-':`${m}min`;}
+        function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+        // ========== 最近地铁站（直线距离，用本地地铁数据，免 API） ==========
+        function haversine(lat1,lng1,lat2,lng2){
+            const R=6371000,toRad=x=>x*Math.PI/180;
+            const dLat=toRad(lat2-lat1),dLng=toRad(lng2-lng1);
+            const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+            return 2*R*Math.asin(Math.sqrt(a));
+        }
+        function nearestStation(lat,lng){
+            if(!metroStations.length||lat==null||lng==null)return null;
+            let best=null,bd=Infinity;
+            for(const s of metroStations){const d=haversine(lat,lng,s.lat,s.lon);if(d<bd){bd=d;best=s;}}
+            return best?{name:best.name,dist:bd,lines:best.lines}:null;
+        }
+        function fmtDist(m){return m<1000?`${Math.round(m/10)*10}m`:`${(m/1000).toFixed(1)}km`;}
+        // 最近地铁：返回 {line:'2/4号线', name:'张江', dist, distStr} 供卡片和 tooltip 共用
+        function stationInfo(lat,lng){
+            const s=nearestStation(lat,lng);if(!s)return null;
+            const line=s.lines&&s.lines.length?`${s.lines.join('/')}号线`:'';
+            return {line,name:s.name,dist:s.dist,distStr:fmtDist(s.dist)};
+        }
+
+        // ========== 解析 ==========
+        const CN_NUM={'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10};
+        function cnNum(s){return CN_NUM[s]!==undefined?String(CN_NUM[s]):s;}
+        const FIELD_PATTERNS=[
+            {re:/(\d+(?:\.\d+)?)\s*(?:平米|平方米?|㎡|m2|sqm|平)/i,key:'面积'},
+            {re:/(\d+)\s*(?:月租|元每月|元\/月|\/月)/,key:'月租'},
+            {re:/(\d+)\s*(?:服务费|物业费)/,key:'服务费'},
+            {re:/(\d+)\s*(?:单价|元每平|元\/平|元\/㎡|万每平|万\/平|万\/㎡)/,key:'单价'},
+            {re:/(\d+)\s*(?:总价|万)/,key:'总价(万)'},
+            {re:/([\d一二两三四五六七八九十])\s*(?:室|房(?![东源子型间]))/,key:'户型(室)',cn:true},
+            {re:/([\d一二两三四五六七八九十])\s*厅/,key:'户型(厅)',cn:true},
+            {re:/([\d一二两三四五六七八九十])\s*(?:卫生间|卫)/,key:'户型(卫)',cn:true},
+        ];
+        // 楼层：复合模式在前（"10楼里面的5楼"→5/10层），避免被单独的"N楼"抢先匹配
+        const FLOOR_PATTERNS=[
+            {re:/([\d一二两三四五六七八九十]+)\s*[楼层]?\s*里(?:面)?(?:的|边的)?\s*([\d一二两三四五六七八九十]+)\s*[楼层]?/,fmt:m=>`${cnNum(m[2])}/${cnNum(m[1])}层`},
+            {re:/(\d+)\s*[/／]\s*(\d+)\s*[层楼]/,fmt:m=>`${m[1]}/${m[2]}层`},
+            {re:/(\d+)\s*[楼层]\s*[,，]?\s*共\s*(\d+)\s*层/,fmt:m=>`${m[1]}/${m[2]}层`},
+            {re:/共\s*(\d+)\s*层\s*[,，]?\s*(\d+)\s*[楼层]/,fmt:m=>`${m[2]}/${m[1]}层`},
+            {re:/共\s*(\d+)\s*层/,fmt:m=>`共${m[1]}层`},
+            {re:/(?<![号\d])(\d{1,2})\s*楼(?![盘梯号])/,fmt:m=>`${m[1]}楼`},
+        ];
+        const TAG_FIELDS=[
+            {re:/小区[：:]\s*(\S+)/,key:'小区'},
+            {re:/备注[：:]\s*(.+?)(?=\s*(?:小区|朝向|装修|标签|特点|描述|年代|楼层)[：:]|$)/,key:'备注'},
+            {re:/描述[：:]\s*(.+?)(?=\s*(?:小区|朝向|装修|标签|特点|备注|年代|楼层)[：:]|$)/,key:'描述'},
+            {re:/标签[：:]\s*(\S+)/,key:'标签'},{re:/特点[：:]\s*(\S+)/,key:'特点'},
+            {re:/服务费[：:]\s*(\S+)/,key:'服务费'},
+            {re:/朝向[：:]\s*(\S+)/,key:'朝向'},{re:/装修[：:]\s*(\S+)/,key:'装修'},
+            {re:/年代[：:]\s*(\S+)/,key:'年代'},{re:/楼层[：:]\s*(\S+)/,key:'楼层'},
+        ];
+        function parseInput(text){
+            let r=text;const f={};
+            // 记录最早匹配到字段的位置：之前的部分是地址，之后剩下的散文是备注
+            let firstIdx=Infinity;
+            const track=m=>{const i=text.indexOf(m[0]);if(i>=0&&i<firstIdx)firstIdx=i;};
+
+            // 电梯 / 步梯
+            let m=r.match(/步梯房?|楼梯房|无电梯/);
+            if(m){f['电梯']='步梯';track(m);r=r.replace(m[0],'');}
+            else if(m=r.match(/电梯房?/)){f['电梯']='电梯';track(m);r=r.replace(m[0],'');}
+
+            // 楼层（楼层:N 标签优先于自由格式）
+            if(!/楼层[：:]/.test(r)){
+                for(const{re,fmt}of FLOOR_PATTERNS){const fm=r.match(re);if(fm){f['楼层']=fmt(fm);track(fm);r=r.replace(fm[0],'');break;}}
+            }
+
+            for(const{re,key,cn}of FIELD_PATTERNS){const fm=r.match(re);if(fm){f[key]=cn?cnNum(fm[1]):fm[1];track(fm);r=r.replace(fm[0],'');}}
+            for(const{re,key}of TAG_FIELDS){const fm=r.match(re);if(fm){f[key]=fm[1].trim();track(fm);r=r.replace(fm[0],'');}}
+
+            // 裸价格兜底：其他字段都解析完后，剩余的 4-5 位独立数字（可带"元"）默认是月租
+            if(!f['月租']){
+                const fm=r.match(/(?<![\d.])([1-9]\d{3,4})(?:\s*元)?(?![\d.])(?!\s*[\/平㎡万楼层弄号室厅卫年])/);
+                if(fm){f['月租']=fm[1];track(fm);r=r.replace(fm[0],'');}
+            }
+
+            // 户型合并：2室1厅1卫
+            const ht=[];
+            if(f['户型(室)'])ht.push(f['户型(室)']+'室');
+            if(f['户型(厅)'])ht.push(f['户型(厅)']+'厅');
+            if(f['户型(卫)'])ht.push(f['户型(卫)']+'卫');
+            if(ht.length){f['户型']=ht.join('');delete f['户型(室)'];delete f['户型(厅)'];delete f['户型(卫)'];}
+
+            // 地址 = 第一个字段出现之前的文字；字段之后剩下的散文 → 备注
+            const clean=s=>s.replace(/[，,。；;、\s]+/g,' ').trim();
+            let addr,remark='';
+            if(firstIdx===Infinity){
+                addr=clean(r);
+            }else{
+                const addrRaw=text.slice(0,firstIdx);
+                addr=clean(addrRaw);
+                let rest=r.startsWith(addrRaw)?r.slice(addrRaw.length):r.replace(addrRaw,'');
+                remark=clean(rest);
+                if(!addr){addr=remark;remark='';}  // 字段开头的输入：剩余文字当地址
+            }
+            if(remark)f['备注']=f['备注']?f['备注']+' '+remark:remark;
+            return{address:addr,fields:f};
+        }
+        function normalizeHouse(h){
+            if(h.status==='pending')h.status='maybe';  // 旧版「待看房」迁移为「可看」
+            if(h.fields)return h;
+            h.fields={};if(h.size)h.fields['面积']=h.size;if(h.rent)h.fields['月租']=h.rent;if(h.price)h.fields['单价']=h.price;return h;
+        }
+        function field(h,k){return(h.fields||{})[k]||h[k]||null;}
+
+        // ========== 通勤 ==========
+        // 目的地 GCJ 坐标缓存：避免每套房都重复地理编码目的地（省 API 配额）
+        let destGcjCache=null;
+        async function getDestGcjCoords(){
+            if(destGcjCache)return destGcjCache;
+            const dests=getDestinations();const dc=[];
+            for(const d of dests){if(!d||!d.trim()){dc.push(null);continue;}try{dc.push(await amapGeocode(d));}catch(e){dc.push(null);}}
+            destGcjCache=dc;return dc;
+        }
+        // 入参是 WGS-84（本地存储坐标系）；高德路线 API 要 GCJ-02，这里转换后再发
+        async function calcCommute(lat,lng){
+            const dc=await getDestGcjCoords();
+            if(!dc.some(Boolean))return dc.map(()=>null);
+            const g=eviltransform.wgs2gcj(lat,lng);
+            const o={lng:g.lng,lat:g.lat},res=[];
+            for(let i=0;i<dc.length;i++){if(!dc[i]){res.push(null);continue;}
+                const[m,d,b]=await Promise.all([getTransitTime(o,dc[i]),getDrivingTime(o,dc[i]),getBicyclingTime(o,dc[i])]);
+                res.push({metro:m,drive:d,bike:b});
+            }return res;
+        }
+
+        // ========== 卡片渲染 ==========
+        let editingIndex=-1;
+
+        function buildMetaLine(h){
+            const p=[];const sz=field(h,'面积'),rn=field(h,'月租'),sf=field(h,'服务费'),pr=field(h,'单价');
+            if(sz)p.push(`${sz}㎡`);if(rn)p.push(`${rn}元/月`);if(sf)p.push(`+${sf}服务费`);
+            if(sz&&rn&&pr)p.push(`租售比 ${(parseFloat(rn)/parseFloat(sz)*12/parseFloat(pr)*100).toFixed(2)}%`);
+            for(const k of['户型','小区']){const v=field(h,k);if(v)p.push(`${k}:${v}`);}
+            return p.join(' · ');
+        }
+
+        function buildCommuteHTML(c){
+            if(!c)return'';
+            // 与 tooltip 一致的关注度顺序：骑车 > 地铁 > 开车
+            return c.map((x,i)=>{if(!x)return'';const d=DEST_COLORS[i];
+                const m=[`${MODE_ICONS.bike}<span class="commute-time">${formatTime(x.bike)}</span>`,
+                         `${MODE_ICONS.metro}<span class="commute-time">${formatTime(x.metro)}</span>`,
+                         `${MODE_ICONS.drive}<span class="commute-time">${formatTime(x.drive)}</span>`];
+                return`<div class="c-row"><span style="color:${d};font-weight:600">●</span> ${m.join(' ')}</div>`;}).join('');
+        }
+
+        function buildFieldsText(h){
+            const p=[h.name];
+            for(const[k,v]of Object.entries(h.fields||{})){
+                if(k==='面积')p.push(`${v}平`);else if(k==='月租')p.push(`${v}/月`);
+                else if(k==='单价')p.push(`${v}单价`);else p.push(`${k}:${v}`);
+            }return p.join(' ');
+        }
+
+        // tooltip 通勤行：按关注度排序+分层 —— 骑车(重) > 地铁(中) > 开车(轻)
+        function buildCommuteLine(c){
+            if(!c||!c.length)return'';
+            const active=c.filter(Boolean).length;const segs=[];
+            for(let i=0;i<c.length;i++){if(!c[i])continue;
+                const dot=active>1?`<span style="color:${DEST_COLORS[i]}">●</span> `:'';
+                segs.push(dot+
+                    `<span class="tt-bike">🚲${formatTime(c[i].bike)}</span> `+
+                    `<span class="tt-metroT">🚇${formatTime(c[i].metro)}</span> `+
+                    `<span class="tt-drive">🚗${formatTime(c[i].drive)}</span>`);
+            }return segs.join('<span class="sep">·</span>');
+        }
+
+        function renderHouseCards(){
+            const houses=getAllHouses();
+            // 头部统计：总数 / 待看(一定要看+可看) / 候选(看过且列入候选)；枪毙不计入任何统计
+            const toSee=houses.filter(h=>h.status==='must'||h.status==='maybe').length;
+            const shortlisted=houses.filter(h=>h.status==='candidate').length;
+            document.getElementById('houseStats').innerHTML=houses.length
+                ?`共<b>${houses.length}</b> · 待看<b>${toSee}</b> · 候选<b>${shortlisted}</b>`:'';
+            renderStatusChips();
+            const panel=document.getElementById('cardsPanel');
+            panel.querySelectorAll('.house-card').forEach(c=>c.remove());
+
+            visibleHouses().forEach(({h,idx:i})=>{
+                const card=document.createElement('div');
+                card.className='house-card'+(h.status==='skip'||h.status==='rejected'?' card-dim':'');card.id=`card-${i}`;
+
+                const status=h.status||'';
+                const commuteHtml=buildCommuteHTML(h.commute);
+                const rawText=h.raw||buildFieldsText(h);  // 原文；老房源回退到重建文本
+                const editing=(i===editingIndex);
+
+                // 地点拆两行：小区（解析得到才写） + 最近地铁（线路 + 站名 + 直线距离）
+                const community=field(h,'小区');
+                const st=stationInfo(h.lat,h.lng);
+                const locRows=
+                    (h.name?`<div class="field-view-row"><label>定位</label><span title="高德解析到的位置，点📍可在地图上核对">📍 ${escapeHtml(h.name)}</span></div>`:'')+
+                    (community?`<div class="field-view-row"><label>小区</label><span>${escapeHtml(community)}</span></div>`:'')+
+                    (st?`<div class="field-view-row"><label>最近地铁</label><span>🚇 ${st.line?escapeHtml(st.line)+' ':''}${escapeHtml(st.name)} <span class="loc-dist">约${st.distStr}</span></span></div>`:'');
+
+                // 其余解析字段（只读，由系统维护；小区已在上面，这里排除）
+                const allKeys=['面积','月租','服务费','单价','总价(万)','户型','电梯','楼层','朝向','装修','年代','标签','特点','备注','描述'];
+                const viewRows=allKeys.map(k=>{
+                    const v=field(h,k)||'';
+                    const units={面积:'平',月租:'元/月',单价:'元/㎡','总价(万)':'万'};
+                    return v?`<div class="field-view-row"><label>${k}</label><span>${escapeHtml(v)}${units[k]?` ${units[k]}`:''}</span></div>`:'';
+                }).join('');
+
+                // 第一块：原文标题。展示=点击即编辑；编辑=输入框，回车保存 / Esc 取消
+                const titleBlock=editing
+                    ? `<input class="raw-edit" id="raw-${i}" value="${escapeHtml(rawText)}" onclick="event.stopPropagation()" onkeydown="rawKey(event,${i})" placeholder="房源原文，如：春江景庐 90平 4500/月">
+                       <div class="edit-hint">⏎ 回车保存并重新解析 · Esc 取消</div>`
+                    : `<div class="card-raw" title="点击编辑原文" onclick="editCard(${i})">${escapeHtml(rawText)}</div>`;
+
+                // 第二块底栏：状态下拉（即状态指示）+ 定位 + 删除（编辑态不显示，靠回车/Esc）
+                const opt=(val,label)=>`<option value="${val}"${status===val?' selected':''}>${label}</option>`;
+                const statusOpts=STATUS_OPTIONS.map(s=>opt(s,`${STATUS_EMOJI[s]} ${STATUS_LABELS[s]}`)).join('');
+                const bottom=editing?'':`
+                    <div class="card-bottom" onclick="event.stopPropagation()">
+                        <select class="status-select ${status?'s-'+status:''}" onchange="setStatus(${i},this.value)">
+                            ${opt('','— 未设置 —')}${statusOpts}
+                        </select>
+                        <button class="icon-btn" title="定位" onclick="locateHouse(${i})">📍</button>
+                        <button class="icon-btn btn-delete-sm" title="删除" onclick="deleteHouse(${i})">🗑</button>
+                    </div>`;
+
+                card.innerHTML=`
+                    <div class="card-header">
+                        <div class="card-info">${titleBlock}</div>
+                    </div>
+                    <div class="card-detail">
+                        ${commuteHtml?`<div class="card-commute">${commuteHtml}</div>`:''}
+                        <div class="field-viewer">${locRows}${viewRows}</div>
+                        ${bottom}
+                    </div>
+                `;
+                panel.appendChild(card);
+            });
+        }
+
+        // idx → 地图 marker，定位时用来置顶 tooltip
+        let houseMarkers=new Map();
+        // 点击 tooltip/标记 → 该 tooltip 置顶（只调层级，不变样式）；同时只有一个置顶
+        let frontedTT=null;
+        function bringTooltipFront(marker){
+            const t=marker.getTooltip&&marker.getTooltip();
+            const el=t&&t.getElement&&t.getElement();
+            if(!el)return;
+            if(frontedTT&&frontedTT!==el)frontedTT.classList.remove('tt-front');
+            el.classList.add('tt-front');frontedTT=el;
+        }
+        function locateHouse(i){
+            const h=getAllHouses()[i];if(!h)return;
+            map.setView([h.lat,h.lng],16);
+            const m=houseMarkers.get(i);
+            if(m)bringTooltipFront(m);  // 被遮挡时置顶它的 tooltip
+        }
+
+        // 点击地图标记/tooltip → 列表滚动到对应卡片并高亮；被筛选隐藏时自动切回「全部」
+        function focusCard(idx){
+            let el=document.getElementById(`card-${idx}`);
+            if(!el){
+                const v=getViewState();
+                if(v.filter!=='all'){v.filter='all';setViewState(v);renderAllHouses();el=document.getElementById(`card-${idx}`);}
+            }
+            if(!el)return;
+            el.scrollIntoView({behavior:'smooth',block:'start'});
+            el.classList.add('card-focus');
+            setTimeout(()=>el.classList.remove('card-focus'),1600);
+        }
+
+        function setStatus(i,s){
+            const houses=getHouses();if(!houses[i])return;
+            houses[i].status=s;
+            saveHouses(houses);renderAllHouses();
+        }
+
+        function editCard(i){
+            editingIndex=i;renderHouseCards();
+            const el=document.getElementById(`raw-${i}`);
+            if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}
+        }
+        function cancelEdit(){editingIndex=-1;renderHouseCards();}
+        function rawKey(e,i){
+            if(e.key==='Enter'){e.preventDefault();saveCardEdit(i);}
+            else if(e.key==='Escape'){e.preventDefault();cancelEdit();}
+        }
+
+        async function saveCardEdit(i){
+            const ta=document.getElementById(`raw-${i}`);if(!ta)return;
+            const newRaw=ta.value.trim();
+            if(!newRaw){alert('原文不能为空');return;}
+
+            const houses=getHouses();const h=houses[i];if(!h)return;
+
+            // 原文是唯一的源。保存即：存原文 → 重新解析字段 → 按新原文重定位 → 重算通勤。
+            h.raw=newRaw;
+            const parsed=parseInput(newRaw);
+            h.fields=parsed.fields;
+            if(parsed.address)h.addr=parsed.address;
+
+            document.getElementById('loading').style.display='block';
+            try{
+                if(parsed.address){
+                    const ar=await amapGeocode(parsed.address);
+                    const wgs=gcj2wgs(ar.lat,ar.lng);
+                    h.name=ar.name||parsed.address;
+                    h.lat=wgs.lat;h.lng=wgs.lng;
+                    h.commute=await calcCommute(h.lat,h.lng);
+                }
+            }catch(err){
+                alert('重新定位失败:'+err.message+'\n（原文和字段已保存，位置保持不变）');
+            }finally{
+                document.getElementById('loading').style.display='none';
+                editingIndex=-1;
+                saveHouses(houses);renderAllHouses();
+            }
+        }
+
+        function deleteHouse(i){
+            if(!confirm('确定删除这个房源？'))return;
+            const houses=getHouses();houses.splice(i,1);saveHouses(houses);
+            editingIndex=-1;
+            renderAllHouses();
+        }
+
+        // 同坐标堆叠时 tooltip 的展开方向（第1套朝上、第2套朝下、第3套朝右、第4套朝左）
+        const TT_DIRS=[{dir:'top',off:[0,-10]},{dir:'bottom',off:[0,10]},{dir:'right',off:[10,0]},{dir:'left',off:[-10,0]}];
+
+        function createHouseMarker(h,idx,stackPos){
+            h=normalizeHouse(h);
+
+            // 紧凑分层 tooltip：
+            // Line 1 (重): 汤臣豪园 · 4500/月
+            // Line 2 (轻): 90㎡ · 2室1厅 · 5/10层 · 步梯 · 朝南 · 精装 · +200服务费 · 短备注
+            // Line 3 (距离>站名>线路): 🚇 320m · 张江 · 2号线
+            // Line 4 (骑车>地铁>开车): 🚲91min 🚇67min 🚗31min
+            const ttLines=[];
+            const community=field(h,'小区'), sz=field(h,'面积'), rn=field(h,'月租'), sf=field(h,'服务费');
+            const layout=field(h,'户型');
+
+            const hd=[community||h.addr||h.name];
+            if(rn)hd.push(`${rn}/月`);
+            ttLines.push(`<span class="tt-hd">${escapeHtml(hd.join(' · '))}</span>`);
+
+            const sub=[];
+            if(sz)sub.push(`${sz}㎡`);
+            if(layout)sub.push(layout);
+            const fl=field(h,'楼层');if(fl)sub.push(fl);
+            const ele=field(h,'电梯');if(ele)sub.push(ele);
+            const dir=field(h,'朝向');if(dir)sub.push('朝'+dir);
+            const dec=field(h,'装修');if(dec)sub.push(dec);
+            if(sf)sub.push(`+${sf}服务费`);
+            for(const k of['标签','特点']){const v=field(h,k);if(v)sub.push(v);}
+            const note=[field(h,'备注'),field(h,'描述')].filter(Boolean).join(' ');
+            if(note)sub.push(note.length>24?note.slice(0,24)+'…':note);
+            if(sub.length)ttLines.push(`<span class="tt-sub">${escapeHtml(sub.join(' · '))}</span>`);
+
+            const st=stationInfo(h.lat,h.lng);
+            if(st)ttLines.push(`<span class="tt-metro">🚇 <span class="tt-em">${st.distStr}</span> · ${escapeHtml(st.name)}${st.line?' · '+escapeHtml(st.line):''}</span>`);
+            const go=buildCommuteLine(h.commute);
+            if(go)ttLines.push(`<span class="tt-go">${go}</span>`);
+            // 删除键：悬停 tooltip 才出现，点击需确认（deleteHouse 内有 confirm）
+            const del=idx!==undefined?`<span class="tt-del" title="删除该房源" onclick="event.stopPropagation();deleteHouse(${idx})">×</span>`:'';
+            // 第一行常驻；其余行包进 .tt-more，地图缩小时整体隐藏（缩略态）
+            const first=ttLines.length?ttLines[0]:escapeHtml(h.name);
+            const rest=ttLines.slice(1).join('<br>');
+            const tt=first+(rest?`<span class="tt-more"><br>${rest}</span>`:'')+del;
+
+            // Color marker by status
+            const fc=STATUS_COLORS[h.status]||'#8E8E93';
+
+            const dim=h.status==='skip'||h.status==='rejected';  // 可不看/枪毙：标记和 tooltip 一并弱化
+            // 同坐标堆叠：标记点向东微移错开（每套约 ±15m），tooltip 换方向展开
+            const sp=stackPos>=0?stackPos:0;
+            const lng=h.lng+(stackPos>0?0.00016*stackPos:0);
+            const ttd=TT_DIRS[sp%TT_DIRS.length];
+            const marker=L.circleMarker([h.lat,lng],{radius:dim?5:7,fillColor:fc,color:'#fff',weight:dim?1.5:2,opacity:dim?0.6:1,fillOpacity:dim?0.45:0.9})
+             .bindTooltip(tt,{permanent:true,direction:ttd.dir,offset:ttd.off,opacity:dim?0.6:0.9,interactive:true,className:'house-tooltip'+(h.status?' tt-'+h.status:'')}).addTo(housesLayer);
+            if(idx!==undefined){
+                // 点击 tooltip/标记：置顶该 tooltip（不变样式、不弹窗）+ 联动右侧卡片
+                marker.on('click',()=>{bringTooltipFront(marker);focusCard(idx);});
+                houseMarkers.set(idx,marker);
+            }
+            return marker;
+        }
+
+        // 地图绘制层级：要看的状态优先级高，必须画在不看的上面（canvas 按绘制顺序叠放）
+        const MAP_Z_RANK={must:5,maybe:4,candidate:3,'':2,skip:1,rejected:0};
+        function renderAllHouses(){
+            housesLayer.clearLayers();houseMarkers.clear();frontedTT=null;
+            const list=visibleHouses();
+            // 统计同坐标房源（地理编码到同一小区 POI 时完全重叠），堆叠的逐个错开
+            const counts=new Map(),seen=new Map();
+            const key=h=>h.lat.toFixed(5)+','+h.lng.toFixed(5);
+            list.forEach(({h})=>counts.set(key(h),(counts.get(key(h))||0)+1));
+            // 先按优先级从高到低分配堆叠方向（高优先级拿到"朝上"），再按从低到高绘制（高优先级最后画、压最上）
+            const entries=[...list].sort((a,b)=>(MAP_Z_RANK[b.h.status||'']??2)-(MAP_Z_RANK[a.h.status||'']??2))
+                .map(({h,idx})=>{
+                    const k=key(h);const n=seen.get(k)||0;seen.set(k,n+1);
+                    return{h,idx,stackPos:counts.get(k)>1?n:-1,rank:MAP_Z_RANK[h.status||'']??2};
+                });
+            entries.sort((a,b)=>a.rank-b.rank);
+            entries.forEach(e=>createHouseMarker(e.h,e.idx,e.stackPos));
+            renderHouseCards();
+        }
+
+        async function refreshAllCommutes(){
+            const houses=getHouses();if(!houses.length)return;
+            const dests=getDestinations();if(!dests.some(d=>d&&d.trim())){houses.forEach(h=>h.commute=null);saveHouses(houses);renderAllHouses();return;}
+            for(const h of houses)h.commute=await calcCommute(h.lat,h.lng);
+            saveHouses(houses);renderAllHouses();
+        }
+
+        // ========== 添加房源 ==========
+        async function addHouse(){
+            const inp=document.getElementById('mainInput'),btn=document.getElementById('addBtn');
+            const text=inp.value.trim();if(!text)return;
+            btn.disabled=true;document.getElementById('loading').style.display='block';
+            try{
+                const parsed=parseInput(text);if(!parsed.address)throw new Error('未能识别地址');
+                const ar=await amapGeocode(parsed.address);
+                const wgs=gcj2wgs(ar.lat,ar.lng);
+                const cr=await calcCommute(wgs.lat,wgs.lng);
+                const houses=getHouses();
+                houses.push({raw:text,name:ar.name||parsed.address,addr:parsed.address,lat:wgs.lat,lng:wgs.lng,fields:parsed.fields,commute:cr,status:'maybe'});
+                saveHouses(houses);renderAllHouses();map.setView([wgs.lat,wgs.lng],14);
+                inp.value='';document.getElementById('inputCard').classList.remove('has-text');
+            }catch(err){alert('错误: '+err.message);}
+            finally{btn.disabled=false;document.getElementById('loading').style.display='none';}
+        }
+
+        // ========== 地铁 ==========
+        async function loadMetroData(){
+            try{const r=await fetch('metro-data.json');if(!r.ok)throw new Error(`HTTP ${r.status}`);const d=await r.json();
+            const lines=d.elements.filter(e=>e.type==='relation'),sns=d.elements.filter(e=>e.type==='node');
+            const nm=new Map();sns.forEach(n=>nm.set(n.id,n));const sl=new Map();
+            lines.forEach(rel=>{const ref=rel.tags?.ref||(rel.tags?.name||'').match(/(\d+)/)?.[1]||'99';const ln=parseInt(ref);
+                rel.members?.forEach(m=>{if(m.type==='node'&&m.role==='stop'){if(!sl.has(m.ref))sl.set(m.ref,[]);if(!sl.get(m.ref).includes(ln))sl.get(m.ref).push(ln);}});});
+            lines.forEach(rel=>{rel.members?.forEach(m=>{if(m.type==='way'&&m.geometry)L.polyline(m.geometry.map(p=>[p.lat,p.lon]),{color:'#bbb',weight:1.5,opacity:0.4,interactive:false}).addTo(metroLinesLayer);});});
+            const seen=new Set();
+            sl.forEach((nums,nid)=>{const node=nm.get(nid);if(!node)return;const nm2=node.tags?.name||node.tags?.['name:zh']||'?';if(seen.has(nm2))return;seen.add(nm2);
+                const sorted=nums.sort((a,b)=>a-b);
+                metroStations.push({name:nm2,lat:node.lat,lon:node.lon,lines:sorted});
+                L.marker([node.lat,node.lon],{icon:L.divIcon({className:'metro-station-icon',html:`<div class="station-pill">${sorted.join('/')}</div>`,iconSize:[sorted.length*12+6,16],iconAnchor:[(sorted.length*12+6)/2,8]})})
+                 .bindTooltip(nm2,{direction:'top',offset:[0,-10],className:'metro-station-tt'}).addTo(metroStationsLayer);
+            });console.log(`地铁:${lines.length}条线路,${seen.size}个站点`);
+
+            // 按线路号(ref)聚合：官方色 + 线路几何 + 有序站点（取站数最多的方向为基准序列）
+            const byRef=new Map();
+            lines.forEach(rel=>{const t=rel.tags||{};const ref=t.ref||(t.name||'').match(/(\d+)/)?.[1]||'?';
+                if(!byRef.has(ref))byRef.set(ref,[]);byRef.get(ref).push(rel);});
+            byRef.forEach((rels,ref)=>{
+                const colour=(rels.find(r=>r.tags?.colour)?.tags?.colour)||METRO_COLORS[ref]||METRO_COLORS.default;
+                const ways=[];
+                rels.forEach(rel=>rel.members?.forEach(m=>{if(m.type==='way'&&m.geometry)ways.push(m.geometry.map(p=>[p.lat,p.lon]));}));
+                let best=[];
+                rels.forEach(rel=>{const sts=[];
+                    rel.members?.forEach(m=>{if(m.type==='node'&&(m.role||'').includes('stop')){const n=nm.get(m.ref);if(n)sts.push({name:n.tags?.name||n.tags?.['name:zh']||'?',lat:n.lat,lon:n.lon});}});
+                    if(sts.length>best.length)best=sts;});
+                const stations=[];for(const s of best){if(!stations.length||stations[stations.length-1].name!==s.name)stations.push(s);}
+                metroLineData.set(ref,{ref,colour,ways,stations});
+            });
+
+            renderAllHouses();   // 站点就绪后刷新卡片+地图标记 tooltip 的「最近地铁」
+            renderLineChips();   // 目的地附近线路 chip
+            renderHighlights();  // 已选中的高亮线路/站点
+            }catch(e){console.error('地铁加载失败:',e);}
+        }
+
+        // ========== 地铁线高亮 ==========
+        // 展示态（默认）：只列已点亮的线路；点标题展开编辑态：全部线路可选
+        let metroExpanded=false;
+        function toggleMetroExpand(){metroExpanded=!metroExpanded;renderLineChips();}
+        function renderLineChips(){
+            const box=document.getElementById('lineChips');if(!box)return;
+            const all=[...metroLineData.keys()].sort((a,b)=>{
+                const na=parseInt(a),nb=parseInt(b);
+                if(isNaN(na)&&isNaN(nb))return String(a).localeCompare(String(b));
+                if(isNaN(na))return 1;if(isNaN(nb))return -1;return na-nb;
+            });
+            document.getElementById('metroPanel').style.display=all.length?'':'none';
+            if(!all.length){box.innerHTML='';return;}
+            const chev=document.getElementById('metroChev');if(chev)chev.textContent=metroExpanded?'▾':'▸';
+            const hl=getHilite();
+            const refs=metroExpanded?all:all.filter(r=>hl.has(r));
+            if(!refs.length){box.innerHTML=`<div class="panel-hint">未点亮线路 · 点标题展开选择</div>`;return;}
+            box.innerHTML=`<div class="chips-row">`+refs.map(ref=>{
+                const ld=metroLineData.get(ref);const on=hl.has(ref);const c=ld?.colour||'#888';
+                const label=/^\d+$/.test(ref)?`${ref}号线`:ref;
+                const style=on?`background:${c};color:#fff;box-shadow:0 2px 8px ${c}73`:'';
+                return `<span class="line-chip${on?' on':''}" style="${style}" onclick="toggleLine('${ref}')">${label}</span>`;
+            }).join('')+`</div>`;
+        }
+        function toggleLine(ref){
+            const hl=getHilite();hl.has(ref)?hl.delete(ref):hl.add(ref);
+            setHilite(hl);renderLineChips();renderHighlights();
+        }
+        // 画高亮线路 + 每个目的地最近站为中心前后各4站
+        function renderHighlights(){
+            highlightLinesLayer.clearLayers();highlightStationsLayer.clearLayers();
+            const hl=getHilite();
+            hl.forEach(ref=>{
+                const ld=metroLineData.get(ref);if(!ld)return;
+                ld.ways.forEach(w=>L.polyline(w,{color:ld.colour,weight:4.5,opacity:0.95,interactive:false}).addTo(highlightLinesLayer));
+                const marked=new Set();
+                destCoords.forEach(c=>{if(!c||!ld.stations.length)return;
+                    let bi=-1,bd=Infinity;
+                    ld.stations.forEach((s,idx)=>{const d=haversine(c.lat,c.lng,s.lat,s.lon);if(d<bd){bd=d;bi=idx;}});
+                    if(bi<0)return;
+                    for(let k=Math.max(0,bi-4);k<=Math.min(ld.stations.length-1,bi+4);k++){
+                        const s=ld.stations[k];if(marked.has(s.name))continue;marked.add(s.name);
+                        L.circleMarker([s.lat,s.lon],{radius:6,fillColor:ld.colour,color:'#fff',weight:2,opacity:1,fillOpacity:1})
+                         .bindTooltip(s.name,{permanent:true,direction:'top',offset:[0,-7],className:'hilite-station-tt',pane:'tooltipPane'})
+                         .addTo(highlightStationsLayer);
+                    }
+                });
+            });
+        }
+
+        // ========== 启动 ==========
+        // 原文是唯一数据源：每次启动用当前解析器重新解析所有房源的原文，
+        // 这样解析器升级后（如新增电梯/楼层/中文数字户型/备注归集），老房源自动补全字段。
+        function reparseAllHouses(){
+            const houses=getHouses();let changed=false;
+            for(const h of houses){
+                if(!h.raw)continue;
+                const p=parseInput(h.raw);
+                if(JSON.stringify(p.fields)!==JSON.stringify(h.fields)){h.fields=p.fields;changed=true;}
+                if(p.address&&h.addr!==p.address){h.addr=p.address;changed=true;}
+            }
+            if(changed){saveHouses(houses);console.log('已用当前解析器重新解析所有房源原文');}
+        }
+        // 硬保险：鼠标在卡片面板矩形内时，彻底禁用地图滚轮缩放（CSS pointer-events 之外的第二道防线）
+        const cardsPanelEl=document.getElementById('cardsPanel');
+        cardsPanelEl.addEventListener('mouseenter',()=>map.scrollWheelZoom.disable());
+        cardsPanelEl.addEventListener('mouseleave',()=>map.scrollWheelZoom.enable());
+        L.DomEvent.disableScrollPropagation(cardsPanelEl);
+        L.DomEvent.disableClickPropagation(cardsPanelEl);
+        (async function init(){
+            await loadServerData();   // 先拉服务器数据（带着手机/其他设备的修改），再渲染
+            reparseAllHouses();
+            document.getElementById('sortSelect').value=getViewState().sort||'default';
+            applyListCollapse();
+            loadMetroData();initDestinations();renderAllHouses();loadSharedHouses();
+        })();
+        document.getElementById('mainInput').addEventListener('keypress',e=>{if(e.key==='Enter')addHouse();});
+        // 有文字才浮现发送键
+        document.getElementById('mainInput').addEventListener('input',e=>{
+            document.getElementById('inputCard').classList.toggle('has-text',!!e.target.value.trim());
+        });
+    </script>
+</body>
+</html>

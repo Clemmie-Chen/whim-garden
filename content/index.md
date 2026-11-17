@@ -7,6 +7,8 @@ modified: 2026-06-03T17:24:52.360+08:00
 
 I'm Clemmentine. I read, think, take notes, write, and share my braindumps here.
 
+> 🏠 **[来我家玩](/static/my-room/)**：俯视我的房间，点开书柜、电脑，顺便看看小猫在干嘛。
+
 This Whim Garden is built via obsidian, quartz and quartz syncer. Thank you!
 
 ## 🐰🕳️ My Rabbit Holes

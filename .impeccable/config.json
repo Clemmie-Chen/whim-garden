@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "quartz/static/shanghai-mahjong/index.html"
+        ],
+        "createdAt": "2026-11-17T04:06:57.252Z",
+        "reason": "Intentional rice-paper (宣纸白) background from the page's chosen Ink & Void palette, documented by the author in content/How I do/Shanghai Mahjong post"
+      }
+    ]
+  }
+}

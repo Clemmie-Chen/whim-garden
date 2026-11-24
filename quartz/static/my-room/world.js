@@ -11,6 +11,7 @@ scene.background = new T.Color(0xe9dfd1)
 const camera = new T.PerspectiveCamera(35,1,.035,60)
 const ray = new T.Raycaster()
 let model, renderer, controls, travel, selected = ''
+const coffeeTime = {value: 2}
 const center = new T.Vector3()
 const delta = new T.Vector3()
 // Each point is in metres in the exported room, with the open sides facing the visitor.
@@ -31,6 +32,42 @@ const views = {
   yarn: [null,vec(.44,.43,.77)],
   小橘子: [null,vec(.54,.31,.74)],
   姜姜: [null,vec(.54,.31,.74)]
+}
+// The GLB stores these joined meshes in room metres, so the weave keeps its scale across seams.
+function finishSurface(material){
+  const coffee=material.name==='Coffee surface'
+  const carpet=material.name.startsWith('Toli ')
+  if(!coffee && !carpet && !['Heathered moss wool','Tobacco microsuede'].includes(material.name))return
+  const suede=material.name==='Tobacco microsuede'
+  material.customProgramCacheKey=()=>coffee ? 'coffee' : carpet ? 'carpet' : suede ? 'suede' : 'wool'
+  material.onBeforeCompile=shader=>{
+    shader.vertexShader='varying vec3 surfacePoint;\n'+shader.vertexShader.replace('#include <begin_vertex>',
+      '#include <begin_vertex>\nsurfacePoint = position;')
+    shader.fragmentShader='varying vec3 surfacePoint;\nuniform float coffeeTime;\n'+shader.fragmentShader
+    shader.uniforms.coffeeTime=coffeeTime
+    const detail=coffee ? `
+      float radius = length(surfacePoint.xz - vec2(1.545, -0.40125));
+      float wave = sin(radius * 310.0 - coffeeTime * 13.0);
+      float front = (radius - coffeeTime * 0.12) / 0.022;
+      diffuseColor.rgb += vec3(0.11, 0.067, 0.029) * (0.5 + 0.5 * wave)
+        * exp(-front * front) * smoothstep(0.0, 0.09, coffeeTime);` : `
+      vec2 threads = vec2(surfacePoint.x + surfacePoint.y * 0.73,
+                          surfacePoint.z + surfacePoint.y * 0.61) * ${carpet ? '1100.0' : '1700.0'};
+      vec2 visible = 1.0 - smoothstep(vec2(0.55), vec2(2.8), fwidth(threads));
+      vec2 fibres = cos(threads) * visible;
+      diffuseColor.rgb *= 1.0 + dot(fibres, vec2(0.11, 0.07));`
+    // Suede catches diffuse light along the edges of its folds.
+    if(suede)shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',
+      `#include <normal_fragment_maps>
+       float nap = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 2.0);
+       diffuseColor.rgb += vec3(0.031, 0.026, 0.023) * nap;`)
+    shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>',
+      '#include <color_fragment>\n'+detail)
+  }
+}
+function touch(key){
+  interact(key)
+  if(key==='coffee' && !reduced.matches)coffeeTime.value=0
 }
 function subject(key){
   return key==='yarn' ? model.getObjectByName(key) : kittens.getObjectByName(key)
@@ -73,7 +110,7 @@ function input(){
   canvas.addEventListener('pointerup',e=>{
     pointers.delete(e.pointerId)
     if(down && Math.hypot(e.clientX-down[0],e.clientY-down[1])<6){
-      const key=hitKey(e);interact(key);focus(key)
+      const key=hitKey(e);touch(key);focus(key)
     }
     down=null
   })
@@ -83,7 +120,7 @@ function input(){
       const keys=Object.keys(views),i=keys.indexOf(selected)
       focus(keys[(i+(e.key===']'?1:-1)+keys.length)%keys.length]);return
     }
-    if(e.key==='Enter'){interact(selected);return}
+    if(e.key==='Enter'){touch(selected);return}
     if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','=','-'].includes(e.key))return
     e.preventDefault();travel=null
     const offset=camera.position.clone().sub(controls.target)
@@ -111,7 +148,9 @@ async function start(){
   resize()
   const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb')
   model=room;scene.add(model,kittens);kittens.scale.set(.6,.67,.6)
-  model.traverse(o=>{if(o.isMesh){o.castShadow=o.material.name!=='Hazy morning sky';o.receiveShadow=true}})
+  const materials=new Set()
+  model.traverse(o=>{if(o.isMesh){o.castShadow=o.material.name!=='Hazy morning sky';o.receiveShadow=true;materials.add(o.material)}})
+  for(const material of materials)finishSurface(material)
   for(const name of Object.keys(views))if(!model.getObjectByName(name)&&!kittens.getObjectByName(name))throw Error('Missing room object '+name)
   const yarn=model.getObjectByName('yarn')
   const localBall=new T.Group()
@@ -121,11 +160,15 @@ async function start(){
   renderer.setAnimationLoop(now=>{
     const dt=Math.min(.09,(now-last)/1000);last=now
     if(document.hidden)return
+    coffeeTime.value=reduced.matches ? 2 : Math.min(2,coffeeTime.value+dt)
     stepKittens(dt,now,localBall);yarn.position.copy(localBall.position).multiply(scale)
     if(selected && !views[selected][0]){
       const at=target(selected)
       if(travel){travel.eye.add(delta.subVectors(at,travel.at));travel.at.copy(at)}
-      else{camera.position.add(delta.subVectors(at,controls.target));controls.target.copy(at)}
+      else{
+        delta.subVectors(at,controls.target).multiplyScalar(1-Math.exp(-dt*5))
+        camera.position.add(delta);controls.target.add(delta)
+      }
     }
     if(travel){
       const k=1-Math.exp(-dt*9)

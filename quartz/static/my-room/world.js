@@ -23,7 +23,7 @@ const views = {
   monitor: [vec(1.29,1.11,-.76), vec(.45,.21,1.16)],
   mac: [vec(1.393,.804,-.633), vec(.045,.135,.29)],
   notebook: [vec(.81,.80,-.45), vec(.30,.55,.63)],
-  kettle: [vec(1.77,.884,-.698), vec(-.045,.108,.44)],
+  kettle: [vec(1.77,.884,-.698), vec(-.075,.136,.424)],
   coffee: [vec(1.55,.82,-.40), vec(.29,.30,.48)],
   book: [vec(.02,.54,-.93), vec(.32,.56,.79)],
   tree: [vec(1.92,.65,1.72), vec(.85,.64,1.31)],
@@ -37,6 +37,34 @@ const views = {
 }
 // The GLB stores these joined meshes in room metres, so the weave keeps its scale across seams.
 function finishSurface(material){
+  const glass=material.name==='Borosilicate wall'
+  if(glass || material.name==='Clear kettle water'){
+    // The window is modelled into the room, so it has no environment map to reflect.
+    if(glass)material.depthWrite=false
+    else material.thickness=.028
+    material.customProgramCacheKey=()=>glass ? 'carafe' : 'clear-water'
+    material.onBeforeCompile=shader=>{
+      shader.fragmentShader=shader.fragmentShader.replace('#include <opaque_fragment>', `
+        vec3 eye = normalize(vViewPosition);
+        float grazing = pow(1.0 - abs(dot(normal, eye)), 4.0);
+        vec3 ray = inverseTransformDirection(reflect(-eye, normal), viewMatrix);
+        vec2 pane = ray.xy / max(0.01, -ray.z);
+        vec2 edges = abs(pane - vec2(-0.55, 0.47));
+        float windowLight = (1.0 - smoothstep(0.45, 0.55, edges.x))
+          * (1.0 - smoothstep(0.40, 0.48, edges.y)) * step(0.0, -ray.z);
+        windowLight *= smoothstep(0.014, 0.033, edges.x);
+        ${glass ? `
+          float bounce = smoothstep(0.08, 0.18, ray.z) * exp(-pow(abs(ray.x + 0.74) / 0.115, 2.0));
+          windowLight = max(windowLight, 0.78 * bounce);
+          outgoingLight = mix(vec3(0.14, 0.18, 0.17), vec3(1.36, 1.43, 1.40), windowLight);
+          diffuseColor.a = 0.012 + 0.30 * grazing + windowLight * (0.105 + 0.45 * grazing);
+        ` : `
+          outgoingLight += vec3(0.84, 0.91, 0.93) * windowLight * (0.024 + 0.37 * grazing);
+        `}
+        #include <opaque_fragment>`)
+    }
+    return
+  }
   const coffee=material.name==='Coffee surface'
   const carpet=material.name.startsWith('Toli ')
   if(!coffee && !carpet && !['Heathered moss wool','Tobacco microsuede'].includes(material.name))return
@@ -134,6 +162,7 @@ function input(){
 }
 async function start(){
   renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'low-power'})
+  renderer.transmissionResolutionScale=.5
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))
   renderer.toneMapping=T.ACESFilmicToneMapping
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap
@@ -148,10 +177,10 @@ async function start(){
   controls.minAzimuthAngle=-.67;controls.maxAzimuthAngle=1.48
   controls.addEventListener('start',()=>{travel=null})
   resize()
-  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb?v=workstation')
+  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb?v=clear-carafe')
   model=room;scene.add(model,kittens);kittens.scale.set(.6,.67,.6)
   const materials=new Set()
-  model.traverse(o=>{if(o.isMesh){o.castShadow=o.material.name!=='Hazy morning sky';o.receiveShadow=true;materials.add(o.material)}})
+  model.traverse(o=>{if(o.isMesh){o.castShadow=!['Hazy morning sky','Clear kettle water','Borosilicate wall'].includes(o.material.name);o.receiveShadow=true;materials.add(o.material)}})
   for(const material of materials)finishSurface(material)
   for(const name of Object.keys(views))if(!model.getObjectByName(name)&&!kittens.getObjectByName(name))throw Error('Missing room object '+name)
   const yarn=model.getObjectByName('yarn')

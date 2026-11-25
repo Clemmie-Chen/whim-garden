@@ -29,7 +29,8 @@ const views = {
   book: [vec(.02,.54,-.93), vec(.32,.56,.79)],
   tree: [vec(1.92,.65,1.72), vec(.85,.64,1.31)],
   cradle: [vec(1.48,.72,1.32), vec(.67,.51,1.11)],
-  plant: [vec(-2.09,.52,2.22), vec(.68,.52,1.02)],
+  plant: [vec(-2.27,1.28,2.26), vec(1.10,.16,.42)],
+  narcissus: [vec(-2.18,1.95,-.55), vec(.67,.265,.48)],
   food: [vec(.87,.09,2.24),vec(.40,.52,.76)],
   water: [vec(1.16,.09,2.24),vec(.40,.52,.76)],
   yarn: [null,vec(.44,.43,.77)],
@@ -178,7 +179,7 @@ async function start(){
   controls.minAzimuthAngle=-.67;controls.maxAzimuthAngle=1.48
   controls.addEventListener('start',()=>{travel=null})
   resize()
-  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb?v=sky-pile')
+  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb?v=houseplants')
   model=room;scene.add(model,kittens);kittens.scale.set(.6,.67,.6)
   const materials=new Set()
   model.traverse(o=>{if(o.isMesh){o.castShadow=!['Hazy morning sky','Clear kettle water','Borosilicate wall'].includes(o.material.name);o.receiveShadow=true;materials.add(o.material)}})

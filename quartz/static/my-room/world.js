@@ -19,9 +19,11 @@ const views = {
   shelf: [vec(-2.16,.95,-.26), vec(1.85,.55,1.26)],
   sofa: [vec(-1.68,.43,1.22), vec(1.36,.68,1.22)],
   chair: [vec(1.02,.56,.08), vec(1.01,.51,1.03)],
-  laptop: [vec(1.26,.54,-.57), vec(1.04,.68,2.04)],
+  laptop: [vec(1.26,.69,-.57), vec(.91,.72,2.15)],
+  monitor: [vec(1.29,1.11,-.76), vec(.45,.21,1.16)],
+  mac: [vec(1.393,.804,-.633), vec(.045,.135,.29)],
   notebook: [vec(.81,.80,-.45), vec(.30,.55,.63)],
-  kettle: [vec(1.73,.92,-.67), vec(.39,.24,.64)],
+  kettle: [vec(1.77,.884,-.698), vec(-.045,.108,.44)],
   coffee: [vec(1.55,.82,-.40), vec(.29,.30,.48)],
   book: [vec(.02,.54,-.93), vec(.32,.56,.79)],
   tree: [vec(1.92,.65,1.72), vec(.85,.64,1.31)],
@@ -146,7 +148,7 @@ async function start(){
   controls.minAzimuthAngle=-.67;controls.maxAzimuthAngle=1.48
   controls.addEventListener('start',()=>{travel=null})
   resize()
-  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb')
+  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb?v=workstation')
   model=room;scene.add(model,kittens);kittens.scale.set(.6,.67,.6)
   const materials=new Set()
   model.traverse(o=>{if(o.isMesh){o.castShadow=o.material.name!=='Hazy morning sky';o.receiveShadow=true;materials.add(o.material)}})

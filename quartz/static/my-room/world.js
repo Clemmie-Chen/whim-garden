@@ -27,7 +27,7 @@ const views = {
   kettle: [vec(1.77,.884,-.698), vec(-.075,.136,.424)],
   keyboard: [vec(1.18,.774,-.455), vec(.026,.24,.235)],
   coffee: [vec(1.555,.812,-.401), vec(.11,.101,.23)],
-  book: [vec(.02,.54,-.93), vec(.32,.56,.79)],
+  book: [vec(-2.22,1.76,.115), vec(.51,.48,.25)],
   tree: [vec(1.92,.65,1.72), vec(.85,.64,1.31)],
   cradle: [vec(1.48,.72,1.32), vec(.67,.51,1.11)],
   plant: [vec(-2.27,1.28,2.26), vec(1.10,.16,.42)],
@@ -180,7 +180,7 @@ async function start(){
   controls.minAzimuthAngle=-.67;controls.maxAzimuthAngle=1.48
   controls.addEventListener('start',()=>{travel=null})
   resize()
-  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb?v=desk-details')
+  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb?v=open-window')
   model=room;scene.add(model,kittens);kittens.scale.set(.6,.67,.6)
   const materials=new Set()
   model.traverse(o=>{if(o.isMesh){o.castShadow=!['Hazy morning sky','Clear kettle water','Borosilicate wall'].includes(o.material.name);o.receiveShadow=true;materials.add(o.material)}})

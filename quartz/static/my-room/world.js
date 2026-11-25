@@ -7,7 +7,7 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)')
 const vec = (x,y,z) => new T.Vector3(x,y,z)
 const home = vec(0,.70,.60)
 const scene = new T.Scene()
-scene.background = new T.Color(0xe9dfd1)
+scene.background = new T.Color(0xe4edf2)
 const camera = new T.PerspectiveCamera(35,1,.035,60)
 const ray = new T.Raycaster()
 let model, renderer, controls, travel, selected = ''
@@ -16,6 +16,7 @@ const center = new T.Vector3()
 const delta = new T.Vector3()
 // Each point is in metres in the exported room, with the open sides facing the visitor.
 const views = {
+  carpet: [vec(.52,.005,1.16), vec(.19,.34,.33)],
   shelf: [vec(-2.16,.95,-.26), vec(1.85,.55,1.26)],
   sofa: [vec(-1.68,.43,1.22), vec(1.36,.68,1.22)],
   chair: [vec(1.02,.56,.08), vec(1.01,.51,1.03)],
@@ -140,7 +141,7 @@ function input(){
   canvas.addEventListener('pointerup',e=>{
     pointers.delete(e.pointerId)
     if(down && Math.hypot(e.clientX-down[0],e.clientY-down[1])<6){
-      const key=hitKey(e);touch(key);focus(key)
+      const key=hitKey(e);touch(key);focus(key==='carpet' && selected===key ? '' : key)
     }
     down=null
   })
@@ -166,18 +167,18 @@ async function start(){
   renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))
   renderer.toneMapping=T.ACESFilmicToneMapping
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap
-  scene.add(new T.HemisphereLight(0xffead6,0xab9481,1.22))
-  const sun=new T.DirectionalLight(0xffdfb2,2.8)
+  scene.add(new T.HemisphereLight(0xd9ebff,0xbeb8af,1.65))
+  const sun=new T.DirectionalLight(0xfff2db,3.12)
   sun.position.set(-1.10,2.52,-4);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048)
   Object.assign(sun.shadow.camera,{left:-3.9,right:3.9,top:3.9,bottom:-3.9,near:.1,far:12})
   sun.shadow.normalBias=.006;sun.shadow.bias=-.00018;scene.add(sun)
-  const fill=new T.DirectionalLight(0xffecdc,.67);fill.position.set(2,3,3);scene.add(fill)
+  const fill=new T.DirectionalLight(0xedf4ff,.92);fill.position.set(2,3,3);scene.add(fill)
   controls=new T.OrbitControls(camera,canvas);controls.enablePan=false
   controls.minDistance=.35;controls.maxDistance=38;controls.minPolarAngle=.16;controls.maxPolarAngle=1.49
   controls.minAzimuthAngle=-.67;controls.maxAzimuthAngle=1.48
   controls.addEventListener('start',()=>{travel=null})
   resize()
-  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb?v=clear-carafe')
+  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb?v=sky-pile')
   model=room;scene.add(model,kittens);kittens.scale.set(.6,.67,.6)
   const materials=new Set()
   model.traverse(o=>{if(o.isMesh){o.castShadow=!['Hazy morning sky','Clear kettle water','Borosilicate wall'].includes(o.material.name);o.receiveShadow=true;materials.add(o.material)}})

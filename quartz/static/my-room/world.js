@@ -16,7 +16,7 @@ const center = new T.Vector3()
 const delta = new T.Vector3()
 // Each point is in metres in the exported room, with the open sides facing the visitor.
 const views = {
-  carpet: [vec(.52,.005,1.16), vec(.19,.34,.33)],
+  carpet: [vec(-1.55,.30,1.28), vec(1.76,1.44,1.58)],
   shelf: [vec(-2.16,.95,-.26), vec(1.85,.55,1.26)],
   sofa: [vec(-1.68,.43,1.22), vec(1.36,.68,1.22)],
   chair: [vec(1.02,.56,.08), vec(1.01,.51,1.03)],
@@ -180,7 +180,7 @@ async function start(){
   controls.minAzimuthAngle=-.67;controls.maxAzimuthAngle=1.48
   controls.addEventListener('start',()=>{travel=null})
   resize()
-  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb?v=open-window')
+  const {scene:room}=await new T.GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('./whole-room.glb?v=single-rug')
   model=room;scene.add(model,kittens);kittens.scale.set(.6,.67,.6)
   const materials=new Set()
   model.traverse(o=>{if(o.isMesh){o.castShadow=!['Hazy morning sky','Clear kettle water','Borosilicate wall'].includes(o.material.name);o.receiveShadow=true;materials.add(o.material)}})
